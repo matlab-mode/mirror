@@ -11,7 +11,7 @@
   "Current version of MATLAB(R) mode.")
 
 ;;
-;; Copyright (C) 2004-2010, 2014 The Mathworks, Inc
+;; Copyright (C) 2004-2010, 2014, 2016 The Mathworks, Inc
 ;; Copyright (C) 1997-2004 Eric M. Ludlam: The MathWorks, Inc
 ;; Copyright (C) 1991-1997 Matthew R. Wette
 ;;
@@ -56,55 +56,96 @@
 (require 'derived)
 
 ;; compatibility
-(if (string-match "X[Ee]macs" emacs-version)
-    (progn
-      (defalias 'matlab-make-overlay 'make-extent)
-      (defalias 'matlab-overlay-put 'set-extent-property)
-      (defalias 'matlab-overlay-get 'extent-property)
-      (defalias 'matlab-delete-overlay 'delete-extent)
-      (defalias 'matlab-overlay-start 'extent-start-position)
-      (defalias 'matlab-overlay-end 'extent-end-position)
-      (defalias 'matlab-previous-overlay-change 'previous-extent-change)
-      (defalias 'matlab-next-overlay-change 'next-extent-change)
-      (defalias 'matlab-overlays-at
-	(lambda (pos) (extent-list nil pos pos)))
-      (defalias 'matlab-cancel-timer 'delete-itimer)
-      (defun matlab-run-with-idle-timer (secs repeat function &rest args)
-	(condition-case nil
-	    (apply 'start-itimer
-		   "matlab" function secs
-		   (if repeat secs nil) t
-		   t (car args))
+(eval-and-compile
+  (if (string-match "X[Ee]macs" emacs-version)
+      (progn
+        (defalias 'matlab-make-overlay 'make-extent)
+        (defalias 'matlab-overlay-put 'set-extent-property)
+        (defalias 'matlab-overlay-get 'extent-property)
+        (defalias 'matlab-delete-overlay 'delete-extent)
+        (defalias 'matlab-overlay-start 'extent-start-position)
+        (defalias 'matlab-overlay-end 'extent-end-position)
+        (defalias 'matlab-previous-overlay-change 'previous-extent-change)
+        (defalias 'matlab-next-overlay-change 'next-extent-change)
+        (defalias 'matlab-overlays-at
+          (lambda (pos) (when (fboundp 'extent-list) (extent-list nil pos pos))))
+        (defalias 'matlab-cancel-timer 'delete-itimer)
+        (defun matlab-run-with-idle-timer (secs repeat function &rest args)
+          (condition-case nil
+              (apply 'start-itimer
+                     "matlab" function secs
+                     (if repeat secs nil) t
+                     t (car args)))
 	  (error
 	   ;; If the above doesn't work, then try this old version of
 	   ;; start itimer.
-	   (start-itimer "matlab" function secs (if repeat secs nil)))))
-      )
-  (defalias 'matlab-make-overlay 'make-overlay)
-  (defalias 'matlab-overlay-put 'overlay-put)
-  (defalias 'matlab-overlay-get 'overlay-get)
-  (defalias 'matlab-delete-overlay 'delete-overlay)
-  (defalias 'matlab-overlay-start 'overlay-start)
-  (defalias 'matlab-overlay-end 'overlay-end)
-  (defalias 'matlab-previous-overlay-change 'previous-overlay-change)
-  (defalias 'matlab-next-overlay-change 'next-overlay-change)
-  (defalias 'matlab-overlays-at 'overlays-at)
-  (defalias 'matlab-cancel-timer 'cancel-timer)
-  (defalias 'matlab-run-with-idle-timer 'run-with-idle-timer)
-  )
+           (when (fboundp 'start-itimer)
+             (start-itimer "matlab" function secs (if repeat secs nil)))))
+        )
+    ;; Else GNU Emacs
+    (defalias 'matlab-make-overlay 'make-overlay)
+    (defalias 'matlab-overlay-put 'overlay-put)
+    (defalias 'matlab-overlay-get 'overlay-get)
+    (defalias 'matlab-delete-overlay 'delete-overlay)
+    (defalias 'matlab-overlay-start 'overlay-start)
+    (defalias 'matlab-overlay-end 'overlay-end)
+    (defalias 'matlab-previous-overlay-change 'previous-overlay-change)
+    (defalias 'matlab-next-overlay-change 'next-overlay-change)
+    (defalias 'matlab-overlays-at 'overlays-at)
+    (defalias 'matlab-cancel-timer 'cancel-timer)
+    (defalias 'matlab-run-with-idle-timer 'run-with-idle-timer)
+    ))
 
-(cond ((fboundp 'point-at-bol)
-       (defalias 'matlab-point-at-bol 'point-at-bol)
-       (defalias 'matlab-point-at-eol 'point-at-eol))
-      ;; Emacs 20.4
-      ((fboundp 'line-beginning-position)
-       (defalias 'matlab-point-at-bol 'line-beginning-position)
-       (defalias 'matlab-point-at-eol 'line-end-position))
-      (t
-       (defmacro matlab-point-at-bol ()
-	 (save-excursion (beginning-of-line) (point)))
-       (defmacro matlab-point-at-eol ()
-	 (save-excursion (end-of-line) (point)))))
+;;; Helper aliases to suppress compiler warnings ===============================
+
+(eval-and-compile
+  ;; `set-face-underline-p' is an obsolete function (as of 24.3); use `set-face-underline' instead.
+  (cond ((fboundp 'set-face-underlined)
+         (defalias 'matlab-set-face-underline 'set-face-underlined))
+        (t
+         (defalias 'matlab-set-face-underline 'set-face-underline-p)))
+
+  ;; `set-face-bold-p' is an obsolete function (as of 24.4); use `set-face-bold' instead.
+  (cond ((fboundp 'set-face-bold)
+         (defalias 'matlab-set-face-bold 'set-face-bold))
+        (t
+         (defalias 'matlab-set-face-bold 'set-face-bold-p)))
+
+  ;; `default-fill-column' is an obsolete variable (as of 23.2); use `fill-column' instead.
+  (cond ((boundp 'fill-column)
+         (defvaralias 'matlab-fill-column 'fill-column))
+        (t
+         (defvaralias 'matlab-fill-column 'default-fill-column)))
+
+  ;; `interactive-p' is an obsolete function (as of 23.2); use `called-interactively-p' instead.
+  (defun matlab-called-interactively-p-helper ()
+    (called-interactively-p 'interactive))
+  (cond ((fboundp 'called-interactively-p)
+         (defalias 'matlab-called-interactively-p 'matlab-called-interactively-p-helper))
+        (t
+         (defalias 'matlab-called-interactively-p 'interactive-p)))
+
+  ;; `toggle-read-only' is an obsolete function (as of 24.3); use `read-only-mode' instead.
+  ;; (matlab-read-only-mode -1) ==> make writable
+  ;; (matlab-read-only-mode 1) ==> make read-only
+  (cond ((fboundp 'read-only-mode)
+         (defalias 'matlab-read-only-mode 'read-only-mode))
+        (t
+         (defalias 'matlab-read-only-mode 'toggle-read-only)))
+
+  (cond ((fboundp 'point-at-bol)
+         (defalias 'matlab-point-at-bol 'point-at-bol)
+         (defalias 'matlab-point-at-eol 'point-at-eol))
+        ;; Emacs 20.4
+        ((fboundp 'line-beginning-position)
+         (defalias 'matlab-point-at-bol 'line-beginning-position)
+         (defalias 'matlab-point-at-eol 'line-end-position))
+        (t
+         (defmacro matlab-point-at-bol ()
+           (save-excursion (beginning-of-line) (point)))
+         (defmacro matlab-point-at-eol ()
+           (save-excursion (end-of-line) (point)))))
+  )
 
 (defmacro matlab-run-in-matlab-mode-only (&rest body)
   "Execute BODY only if the active buffer is a MATLAB(R) M-file buffer."
@@ -113,11 +154,6 @@
 	,@body)
      (error "This command works only in a MATLAB M-file buffer")))
 
-(defun matlab-with-emacs-link ()
-  "Return non-nil if Emacs Link is running and user wants to use it."
-  (and (featurep 'matlab-eei)
-       matlab-use-eei
-       matlab-eei-process))
 
 ;;; User-changeable variables =================================================
 
@@ -215,6 +251,7 @@ changed, and functions are indented based on `matlab-functions-have-end'."
     )
 )
 
+(defvar matlab-defun-regex) ;; Quiet compiler warning (is defined below)
 (defun matlab-do-functions-have-end-p ()
   "Non-nil if the first function in the current buffer terminates with end."
   (save-excursion
@@ -239,7 +276,7 @@ changed, and functions are indented based on `matlab-functions-have-end'."
   (setq matlab-functions-have-end matlab-functions-have-end-minor-mode))
 
 (defun matlab-indent-function-body-p ()
-  "Non-nil if functions bodies are indented. 
+  "Non-nil if functions bodies are indented.
 See `matlab-indent-function-body' variable."
   (if (eq matlab-indent-function-body 'MathWorks-Standard)
       ;; Dec '09
@@ -490,7 +527,7 @@ evaluating it."
   "Make adjustments for font lock.
 If font lock is not loaded, lay in wait."
   (if (and (featurep 'custom) (fboundp 'custom-declare-variable))
-	
+
       (progn
 	(defface matlab-unterminated-string-face
 	  (list
@@ -529,41 +566,41 @@ If font lock is not loaded, lay in wait."
 		       :bold t)))
 	  "*Face to use for cellbreak %% lines.")
 	)
-      
+
     ;; Now, lets make the unterminated string face
     (cond ((facep 'font-lock-string-face)
 	   (copy-face 'font-lock-string-face
 		      'matlab-unterminated-string-face))
 	  (t
 	   (make-face 'matlab-unterminated-string-face)))
-    (set-face-underline-p 'matlab-unterminated-string-face t)
-    
+    (matlab-set-face-underline 'matlab-unterminated-string-face t)
+
     ;; Now make some simulink faces
     (cond ((facep 'font-lock-type-face)
 	   (copy-face 'font-lock-type-face 'matlab-simulink-keyword-face))
 	  (t
 	   (make-face 'matlab-simulink-keyword-face)))
-    (set-face-underline-p 'matlab-simulink-keyword-face t)
-    
+    (matlab-set-face-underline 'matlab-simulink-keyword-face t)
+
     ;; Now make some nested function/end keyword faces
     (cond ((facep 'font-lock-type-face)
 	   (copy-face 'font-lock-type-face 'matlab-nested-function-keyword-face))
 	  (t
 	   (make-face 'matlab-nested-function-keyword-face)))
-    
+
     ;; Now make some cross-function variable faces
     (cond ((facep 'font-lock-type-face)
 	   (copy-face 'font-lock-type-face 'matlab-cross-function-variable-face))
 	  (t
 	   (make-face 'matlab-cross-function-variable-face)))
-    (set-face-bold-p 'matlab-cross-function-variable-face t)
+    (matlab-set-face-bold 'matlab-cross-function-variable-face t)
 
     ;; Now make some cellbreak variable faces
     (cond ((facep 'font-comment-face)
 	   (copy-face 'font-lock-comment-face 'matlab-cellbreak-face))
 	  (t
 	   (make-face 'matlab-cellbreak-face)))
-    (set-face-bold-p 'matlab-cellbreak-face t)
+    (matlab-set-face-bold 'matlab-cellbreak-face t)
     (condition-case nil
 	(set-face-attribute 'matlab-cellbreak-face nil :overline t)
       (error nil))
@@ -979,7 +1016,7 @@ ui\\(cont\\(ext\\(\\|menu\\)\\|rol\\)\\|menu\\|\
 
 (defconst matlab-function-arguments
   "\\(([^)]*)\\)?\\s-*\\([,;\n%]\\|$\\)")
- 
+
 (defvar matlab-gaudy-font-lock-keywords
   (append
    matlab-font-lock-keywords
@@ -1106,6 +1143,11 @@ mode.")
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.m$" . matlab-mode))
 
+(declare-function mlint-minor-mode "mlint.el")
+(declare-function mlint-buffer "mlint.el")
+(declare-function mlint-clear-warnings "mlint.el")
+(declare-function mlint-clear-cross-function-variable-highlighting "mlint.el")
+
 ;;;###autoload
 (defun matlab-mode ()
   "MATLAB(R) mode is a major mode for editing MATLAB dot-m files.
@@ -1194,7 +1236,7 @@ All Key Bindings:
   (make-local-variable 'add-log-current-defun-function)
   (setq add-log-current-defun-function 'matlab-current-defun)
   (make-local-variable 'fill-column)
-  (setq fill-column default-fill-column)
+  (setq fill-column matlab-fill-column)
   (make-local-variable 'auto-fill-function)
   (if matlab-auto-fill (setq auto-fill-function 'matlab-auto-fill))
   ;; Emacs 20 supports this variable.  This lets users turn auto-fill
@@ -1273,7 +1315,7 @@ All Key Bindings:
 	(setq matlab-indent-function-body 'MathWorks-Standard)
 	))
     )
-    
+
    (t)
    )
 
@@ -1505,7 +1547,7 @@ blocks.")
   	  matlab-block-mid-pre "\\|"
  	  (matlab-block-end-pre) "\\|"
  	  matlab-endless-blocks "\\)\\b"))
-  
+
 (defun matlab-block-scan-re ()
   "Expression used to scan over matching pairs of begin/ends."
   (concat "\\(^\\|[;,]\\)\\s-*\\("
@@ -1731,7 +1773,7 @@ This assumes that expressions do not cross \"function\" at the left margin."
 		(setq returnme nil)
 	      (error "Unstarted END construct"))))
 	returnme))))
-  
+
 (defun matlab-forward-sexp (&optional includeelse)
   "Go forward one balanced set of MATLAB expressions.
 Optional argument INCLUDEELSE will stop on ELSE if it matches the starting IF."
@@ -2260,7 +2302,7 @@ are in what could be a an incomplete string."
 		))))))
     (set-match-data m)
     returnme))
-  
+
 
 (defun matlab-comment-on-line ()
   "Place the cursor on the beginning of a valid comment on this line.
@@ -2644,7 +2686,7 @@ Must be one of:
   "Vanilla new line."
   (interactive)
   (newline))
-  
+
 (defun matlab-indent-after-ret ()
   "Indent after new line."
   (interactive)
@@ -2664,6 +2706,7 @@ Must be one of:
   (newline)
   (matlab-indent-line))
 
+(defvar matlab-quiesce-nosemi-regexp) ;; quiet compiler warning (var is defined below)
 (defun matlab-semicolon-on-return ()
   "If needed, add a semicolon at point automatically."
   (if matlab-return-add-semicolon
@@ -3384,7 +3427,7 @@ If NEXT then the next patch from the list is used."
   "Return PREFIX matching elements for boolean symbols.
 If NEXT then the next patch from the list is used."
   (matlab-generic-list-expand matlab-keywords-boolean prefix next))
- 
+
 (defun matlab-property-completions (prefix &optional next)
   "Return PREFIX matching elements for property names in strings.
 If NEXT then the next property from the list is used."
@@ -3785,7 +3828,7 @@ If ARG is nil, then highlighting is toggled."
 	      (matlab-run-with-idle-timer
 	       1 nil 'matlab-highlight-block-match
 	       (current-buffer))))))
-  
+
 (defun matlab-highlight-block-match (&optional buff-when-launched)
   "Highlight a matching block if available.
 BUFF-WHEN-LAUNCHED is the buffer that was active when the timer was set."
@@ -3867,7 +3910,7 @@ Argument ARG to make it happy."
 ;; It has not been tested by me enough.
 
 ;; REMOVE PUSHNEW FROM THIS LINE
-;;(pushnew (list 'matlab-mode 
+;;(pushnew (list 'matlab-mode
 ;;	       (matlab-block-beg-pre)
 ;;	       (matlab-block-end-pre)
 ;;	       "%"
@@ -3899,7 +3942,7 @@ If optional FAST is non-nil, do not perform usually lengthy checks."
       (funcall (car l) fast)
       (setq l (cdr l)))
     (goto-char p))
-  (if (interactive-p)
+  (if (matlab-called-interactively-p)
       (message "Done.")))
 
 (defun matlab-toggle-show-mlint-warnings ()
@@ -3911,7 +3954,7 @@ If optional FAST is non-nil, do not perform usually lengthy checks."
           (mlint-buffer)        ; became true, recompute mlint info
         (mlint-clear-warnings))) ; became false, just remove hilighting
   ;; change mlint mode altogether
-  (mlint-minor-mode 
+  (mlint-minor-mode
    (if (or matlab-highlight-cross-function-variables
            matlab-show-mlint-warnings)
        1 -1)))
@@ -3926,7 +3969,7 @@ If optional FAST is non-nil, do not perform usually lengthy checks."
           (mlint-buffer)        ; became true, recompute mlint info
                                 ; became false, just remove hilighting ...
         (mlint-clear-cross-function-variable-highlighting)))
-  (mlint-minor-mode 
+  (mlint-minor-mode
    (if (or matlab-highlight-cross-function-variables
            matlab-show-mlint-warnings)
        1 -1)))        ; change mlint mode altogether
@@ -4019,7 +4062,7 @@ Optional argument FAST causes this check to be skipped."
 			 "Unterminated block.  Continue anyway?")))
 	      (error "Unterminated Block found!")))
 	(message "Block-check: %d%%" (/ (/ (* 100 (point)) (point-max)) 2))))))
-  
+
 (defun matlab-mode-vf-block-matches-backward (&optional fast)
   "Verify/fix unstarted (or dangling end) blocks.
 Optional argument FAST causes this check to be skipped."
@@ -4105,10 +4148,19 @@ desired.  Optional argument FAST is not used."
 		    (insert ";")))))
 	(forward-line 1))))
   (message "Scanning .... done"))
-  
+
 
 
 ;;; V19 stuff =================================================================
+
+;; XXX is the eei code still in use?
+
+(defvar matlab-eei-process) ;; quiet compiler warning. XXX where is matlab-eei-process
+(defun matlab-with-emacs-link ()
+  "Return non-nil if Emacs Link is running and user wants to use it."
+  (and (featurep 'matlab-eei)   ;; XXX where is matlab-eei
+       matlab-use-eei
+       matlab-eei-process))
 
 (defvar matlab-mode-menu-keymap nil
   "Keymap used in MATLAB mode to provide a menu.")
@@ -4263,7 +4315,7 @@ external editor for MATLAB.")
 
 (defcustom matlab-shell-history-file "~/.matlab/%s/history.m"
   "*Location of the history file.
-A %s is replaced with the MATLAB version release number, such as R12. 
+A %s is replaced with the MATLAB version release number, such as R12.
 This file is read to initialize the comint input ring.")
 
 (defcustom matlab-shell-input-ring-size 32
@@ -4281,11 +4333,23 @@ This file is read to initialize the comint input ring.")
   :group 'matlab-shell
   :type 'hook)
 
+(defcustom matlab-shell-tab-use-company t
+  "*Use `company' (complete anything) for TAB completions in
+MATLAB shell when `company' is installed. Note, when you type to
+narrow completions, you may find the responses slow and if so,
+you can try turning this off."
+  :group 'matlab-shell
+  :type 'boolean)
+
+(defvar matlab-shell-tab-company-available nil
+  "If we have `company' (completion anything) use it to show
+`matlab-shell' completions when `matlab-shell-tab-use-company' is t.")
+(when (require 'company nil 'noerror)
+  (setq matlab-shell-tab-company-available t))
+
 (defcustom matlab-shell-ask-MATLAB-for-completions t
   "When Non-nil, ask MATLAB for a completion list.
-When nil, just complete file names.  (The original behavior.)
-At this time, MATLAB based completion can be slow if there are
-a lot of possible answers."
+When nil, complete against file names."
   :group 'matlab-shell
   :type 'boolean)
 
@@ -4293,13 +4357,14 @@ a lot of possible answers."
   "Name used to create `matlab-shell' mode buffers.
 This name will have *'s surrounding it.")
 
+(declare-function comint-check-proc "comint.el" (buffer))
 (defun matlab-shell-active-p ()
   "Return t if the MATLAB shell is active."
-  (if (get-buffer (concat "*" matlab-shell-buffer-name "*"))
-      (save-excursion
-	(set-buffer (concat "*" matlab-shell-buffer-name "*"))
-	(if (comint-check-proc (current-buffer))
-	    (current-buffer)))))
+  (let ((msbn (get-buffer (concat "*" matlab-shell-buffer-name "*"))))
+    (if msbn
+        (with-current-buffer msbn
+          (if (comint-check-proc (current-buffer))
+              (current-buffer))))))
 
 (defvar matlab-shell-mode-map ()
   "Keymap used in `matlab-shell-mode'.")
@@ -4320,7 +4385,7 @@ This name will have *'s surrounding it.")
 (defvar matlab-prompt-seen nil
   "Track visibility of MATLAB prompt in MATLAB Shell.")
 
-(eval-when-compile (require 'gud) (require 'comint) (require 'shell))
+(eval-and-compile (require 'gud) (require 'comint) (require 'shell))
 
 ;;;###autoload
 (defun matlab-shell ()
@@ -4340,11 +4405,9 @@ Try C-h f matlab-shell RET"))
   (require 'shell)
   (require 'gud)
 
-  ;; Make sure this is safe...
-  (if (and matlab-shell-enable-gud-flag (fboundp 'gud-def))
-      ;; We can continue using GUD
-      nil
-    (message "Sorry, your emacs cannot use the MATLAB Shell GUD features.")
+  ;; Make sure this is safe to use gud to debug MATLAB
+  (when (and matlab-shell-enable-gud-flag (not (fboundp 'gud-def)))
+    (message "Your emacs is missing `gud-def' which means matlab-shell won't work correctly.")
     (setq matlab-shell-enable-gud-flag nil))
 
   (switch-to-buffer (concat "*" matlab-shell-buffer-name "*"))
@@ -4366,8 +4429,14 @@ Try C-h f matlab-shell RET"))
 	      (define-key km [(control h) (control m)]
 		matlab-help-map)
               (define-key km "\C-c." 'matlab-find-file-on-path)
-	      (define-key km (kbd "TAB") 'matlab-shell-tab)
-	      (define-key km "\C-i" 'matlab-shell-tab)
+              (if (not matlab-shell-tab-company-available)
+                  (progn
+                    (define-key km "\C-i" 'matlab-shell-c-tab)
+                    (define-key km (kbd "TAB") 'matlab-shell-c-tab)) ;; classic emacs tab complete
+                ;; else have both company (popup) tab complete and classic tab complete
+                (define-key km (kbd "TAB") 'matlab-shell-tab)
+                (define-key km "\C-i" 'matlab-shell-tab)
+                (define-key km (kbd "<C-tab>") 'matlab-shell-c-tab))
 	      (define-key km [(control up)]
 		'comint-previous-matching-input-from-input)
 	      (define-key km [(control down)]
@@ -4389,29 +4458,25 @@ Try C-h f matlab-shell RET"))
             (process-environment (cons newvar process-environment)))
        (apply 'make-comint matlab-shell-buffer-name matlab-shell-command
               nil matlab-shell-command-switches)))
-    
+
     (setq shell-dirtrackp t)
     (comint-mode)
 
-    (if matlab-shell-enable-gud-flag
-	(progn
-	  (gud-mode)
-          (make-local-variable 'matlab-prompt-seen)
-          (setq matlab-prompt-seen nil)
-	  (make-local-variable 'gud-marker-filter)
-	  (setq gud-marker-filter 'gud-matlab-marker-filter)
-	  (make-local-variable 'gud-find-file)
-	  (setq gud-find-file 'gud-matlab-find-file)
+    (when matlab-shell-enable-gud-flag
+      (gud-mode)
+      (make-local-variable 'matlab-prompt-seen)
+      (setq matlab-prompt-seen nil)
+      (make-local-variable 'gud-marker-filter)
+      (setq gud-marker-filter 'gud-matlab-marker-filter)
+      (make-local-variable 'gud-find-file)
+      (setq gud-find-file 'gud-matlab-find-file)
 
-	  (set-process-filter (get-buffer-process (current-buffer))
-			      'gud-filter)
-	  (set-process-sentinel (get-buffer-process (current-buffer))
-				'gud-sentinel)
-	  (gud-set-buffer))
-      ;; What to do when there is no GUD
-      ;(set-process-filter (get-buffer-process (current-buffer))
-	;		  'matlab-shell-process-filter)
-      )
+      (set-process-filter (get-buffer-process (current-buffer))
+                          'gud-filter)
+      (set-process-sentinel (get-buffer-process (current-buffer))
+                            'gud-sentinel)
+      (gud-set-buffer))
+
 
     ;; Comint and GUD both try to set the mode.  Now reset it to
     ;; matlab mode.
@@ -4427,7 +4492,7 @@ Try C-h f matlab-shell RET"))
   :type '(choice (const :tag "None" nil)
 		 (file :tag "File" "")))
 
- 
+
 (defun matlab-shell-hack-logo (str)
   "Replace the text logo with a real logo.
 STR is passed from the commint filter."
@@ -4436,13 +4501,15 @@ STR is passed from the commint filter."
       (when (re-search-backward "^[ \t]+< M A T L A B (R) >" (point-min) t)
  	(delete-region (match-beginning 0) (match-end 0))
  	(insert (make-string 16 ? ))
- 	(set-extent-begin-glyph (make-extent (point) (point))
- 				(make-glyph matlab-shell-logo))))
-    ;; Remove this function from `comint-output-filter-functions'
-    (remove-hook 'comint-output-filter-functions
+        (when (fboundp 'set-extent-begin-glyph)
+          (set-extent-begin-glyph (when (fboundp 'make-extent) (make-extent (point) (point)))
+                                  (when (fboundp 'make-glyph) (make-glyph matlab-shell-logo))))))
+          ;; Remove this function from `comint-output-filter-functions'
+      (remove-hook 'comint-output-filter-functions
  		 'matlab-shell-hack-logo))
-  
   )
+
+(defvar matlab-shell-last-error-anchor) ;; Quiet compiler warning
 
 (defun matlab-shell-version-scrape (str)
   "Scrape the MATLAB Version from the MATLAB startup text.
@@ -4552,6 +4619,9 @@ in a popup buffer.
      ["Lookfor Command" matlab-shell-apropos t]
      ["Topic Browser" matlab-shell-topic-browser t]
      "----"
+     ["Complete command" matlab-shell-c-tab t]
+     ["Popup complete command" matlab-shell-tab :visible matlab-shell-tab-company-available]
+     "----"
      ["Demos" matlab-shell-demos t]
      ["Close Current Figure" matlab-shell-close-current-figure t]
      ["Close Figures" matlab-shell-close-figures t]
@@ -4561,7 +4631,7 @@ in a popup buffer.
       ]
      ["Exit" matlab-shell-exit t]))
   (easy-menu-add matlab-shell-menu matlab-shell-mode-map)
-  
+
   (if matlab-shell-enable-gud-flag
       (progn
 	(gud-def gud-break  "dbstop at %l in %f"  "\C-b" "Set breakpoint at current line.")
@@ -4572,7 +4642,7 @@ in a popup buffer.
 	(gud-def gud-finish "dbquit"              "\C-f" "Finish executing current function.")
 	;; (gud-def gud-up     "dbup %p;\ndbhotlink()"             "<"    "Up N stack frames (numeric arg).")
 	;; (gud-def gud-down   "dbdown %p;\ndbhotlink()"           ">"    "Down N stack frames (numeric arg).")
-	(gud-def gud-up     "dbup;\n[~,a___]=dbstack;\ndbhotlink(a___)"             "<"    "Up N stack frames (numeric arg).") 
+	(gud-def gud-up     "dbup;\n[~,a___]=dbstack;\ndbhotlink(a___)"             "<"    "Up N stack frames (numeric arg).")
 	(gud-def gud-down   "dbdown;\n[~,a___]=dbstack;\ndbhotlink(a___)"           ">"    "Down N stack frames (numeric arg).")
 	(gud-def gud-print  "%e"                  "\C-p" "Evaluate M expression at point.")
 	(if (fboundp 'gud-make-debug-menu)
@@ -4604,7 +4674,7 @@ in a popup buffer.
   "Keymap used on overlays that represent errors.")
 
 ;; ANCHORS
-(defvar matlab-anchor-beg "<a href=\"\\(?:matlab: \\)?\\([^\"]+\\)\">"
+(defvar matlab-anchor-beg "<a href=\"\\(\\(?:matlab:\\)?[^\"]+\\)\">"
   "Beginning of html anchor.")
 
 (defvar matlab-anchor-end "</a>"
@@ -4777,13 +4847,8 @@ FILE is ignored, and ARGS is returned."
 				     (file-name-directory
 				      (locate-library "matlab")))
 		   matlab-shell-emacsclient-command))
-	;; User doesn't want to use our fancy toolbox directory
-	(process-send-string
-	 (get-buffer-process gud-comint-buffer)
-	 "if usejava('jvm'), \
-com.mathworks.services.Prefs.setBooleanPref('EditorGraphicalDebugging', false); \
-end\n"
-	 ))
+        ;; Setup is misconfigured - we need emacsinit because it tells us how to debug
+        (error "unable to initialize matlab, emacsinit.m and other files missing"))
       ;; Mark that we've seen at least one prompt.
       (setq matlab-prompt-seen t)
       ))
@@ -4818,7 +4883,7 @@ end\n"
 	     ;; If we have the prompt, but no match (as above),
 	     ;; perhaps it is already dumped out into the buffer.  In
 	     ;; that case, look back through the buffer.
-	     
+
 	     )
 	    (when ef
 	      (setq frame (cons ef (string-to-number el)))))))
@@ -4898,7 +4963,7 @@ end\n"
 	(comint-next-matching-input-from-input (- n)))
 
     ;; If somewhere else, just move around.
-    (previous-line n)))
+    (forward-line (- n))))
 
 (defun matlab-shell-delete-backwards-no-prompt (&optional arg)
   "Delete one char backwards without destroying the matlab prompt.
@@ -4917,28 +4982,27 @@ Optional argument ARG describes the number of chars to delete."
 (defun matlab-shell-completion-list (str)
   "Get a list of completions from MATLAB.
 STR is a substring to complete."
-  (save-excursion
-    (let* ((msbn (matlab-shell-buffer-barf-not-running))
-	   (cmd (concat "emacsdocomplete('" str "')"))
-	   (comint-scroll-show-maximum-output nil)
-	   output
-	   (completions nil))
-      (set-buffer msbn)
+  (let* ((msbn (matlab-shell-buffer-barf-not-running))
+         (cmd (concat "emacsdocomplete('" str "')"))
+         (comint-scroll-show-maximum-output nil)
+         output
+         (completions nil))
+    (with-current-buffer msbn
       (if (not (matlab-on-prompt-p))
-	  (error "MATLAB shell must be non-busy to do that"))
+          (error "MATLAB shell must be non-busy to do that"))
       (setq output (matlab-shell-collect-command-output cmd))
-      ;; Debug
-      (string-match "emacs_completions_output =" output)
+      (if (not (string-match "emacs_completions_output =" output))
+          (error "Internal error, '%s' returned unexpected output, %s" cmd output))
       (setq output (substring output (match-end 0)))
       ;; Parse the output string.
       (while (string-match "'" output)
-	;; Hack off the preceeding quote
-	(setq output (substring output (match-end 0)))
-	(string-match "'" output)
-	;; we are making a completion list, so that is a list of lists.
-	(setq completions (cons (list (substring output 0 (match-beginning 0)))
-				completions)
-	      output (substring output (match-end 0))))
+        ;; Hack off the preceeding quote
+        (setq output (substring output (match-end 0)))
+        (string-match "'" output)
+        ;; we are making a completion list, so that is a list of lists.
+        (setq completions (cons (list (substring output 0 (match-beginning 0)))
+                                completions)
+              output (substring output (match-end 0))))
       ;; Return them
       (nreverse completions))))
 
@@ -4992,83 +5056,235 @@ Returns a string path to the root of the executing MATLAB."
 	(if (not (matlab-on-prompt-p))
 	    (error "MATLAB shell must be non-busy to do that"))
 	(setq output (matlab-shell-collect-command-output cmd))
-	
+
 	(string-match "$" output)
 	(substring output 0 (match-beginning 0))))))
 
 (defvar matlab-shell-window-exists-for-display-completion-flag nil
   "Non-nil means there was an 'other-window' available when `display-completion-list' is called.")
 
+
+(defun matlab-shell-get-completion-limit-pos (last-cmd completions)
+  "Used by `matlab-shell-tab' to get the starting location within last-cmd
+of the common substring used in matching the completions, i.e.
+  (substring last-cmd limit-pos (length last-cmd))
+is the common starting substring of each completion in completions."
+  (let ((limit-pos (length last-cmd)))
+    (when completions
+      (let* ((completion (car (car completions)))
+             (i (length completion))
+             (chomp-num-chars nil))
+        (while (> i 0)
+          (let ((part (substring completion 0 i)))
+            (if (string-suffix-p part last-cmd)
+                (progn
+                  (setq chomp-num-chars i)
+                  (setq i 0))
+              (setq i (- i 1)))))
+        (if chomp-num-chars
+            (setq limit-pos (- (length last-cmd) chomp-num-chars)))))
+    limit-pos))
+
+(defun matlab-shell-get-completion-info ()
+  "Helper function for `matlab-shell-tab' and `company-matlab-shell' to get competion
+information for item at point"
+  (if (or (not (= (point) (point-max)))
+          (not (matlab-on-prompt-p)))
+      nil ;; no completions. We can only complete when typing a command.
+    (let ((inhibit-field-text-motion t)
+          (last-cmd nil)
+          (last-cmd-start-point nil)
+          (common-substr nil)
+          (last-cmd-quoted nil)
+          (limit-pos nil)
+          (completions nil)
+          (common-substr-start-pt nil)
+          (common-substr-end-pt nil))
+      ;; 1. Load last-cmd which is the command we are completing on.
+      ;; 2. Load last-cmd-quoted which the expression typed ("!mv
+      ;;    file."). Note, this has single quotes doubled up so we can ask
+      ;;    MATLAB for completions on last-cmd-quoted.
+      ;; We need to avoid altering point because when we ask for completions, we send
+      ;; emacsdocomplete(last-cmd-quoted) to the MATLAB command window and then grab the results
+      ;; and erase them.
+      (save-excursion
+        (goto-char (point-max))
+        (beginning-of-line)
+        (re-search-forward comint-prompt-regexp)
+        ;; save the old (last) command
+        (setq last-cmd (buffer-substring (point) (matlab-point-at-eol))))
+
+      (setq last-cmd-quoted last-cmd)
+      ;; double every single quote
+      (while (string-match "[^']\\('\\)\\($\\|[^']\\)" last-cmd-quoted)
+        (setq last-cmd-quoted (replace-match "''" t t last-cmd-quoted 1)))
+
+      ;; Get the list of completions.
+      ;; When obtaining completions, we can't use save-excursion because we are
+      ;; manipulating the text in the *MATLAB* window at the point and this
+      ;; move point-marker which causes save-excursion to move to the wrong
+      ;; location.  We need to do this before we manipulate the text in the
+      ;; *MATLAB* buffer because `matlab-shell-completion-list' sends
+      ;; emacsdocompletion('statement') to matlab and matlab produces output in
+      ;; the *MATLAB* buffer, then `matlab-shell-completion-list' removes the
+      ;; output from the *MATLAB* buffer.
+      (setq completions (matlab-shell-completion-list last-cmd-quoted))
+
+      ;; Consider
+      ;;   >> ! touch foo.ext1 foo.ext2
+      ;;   >> ! mv foo.<TAB>
+      ;; 'completions' will contain (("foo.ext1") ("foo.ext2")) and
+      ;; common-substr will be "foo." which is used in displaying the
+      ;; completions. The limit-pos in this case will be 5 and
+      ;; last-cmd is "! mv foo."
+      (setq limit-pos (matlab-shell-get-completion-limit-pos last-cmd completions))
+      (setq common-substr (substring last-cmd limit-pos))
+
+      ;; Mark the subfield of the completion result so we can say no completions
+      ;; if there aren't any otherwise we need to remove it.
+      (save-excursion
+        (goto-char (point-max))
+        (beginning-of-line)
+        (re-search-forward comint-prompt-regexp)
+        (setq common-substr-start-pt (+ (point) limit-pos))
+        (setq common-substr-end-pt (matlab-point-at-eol))
+        (if (and (eq (length completions) 1)
+                 (string-equal (buffer-substring-no-properties
+                                common-substr-start-pt common-substr-end-pt)
+                               (car (car completions))))
+            (setq completions nil))) ;; force display of "No completions"
+      ;; Result
+      (list (cons 'last-cmd               last-cmd)
+            (cons 'last-cmd-start-point   last-cmd-start-point)
+            (cons 'common-substr          common-substr)
+            (cons 'limit-pos              limit-pos)
+            (cons 'completions            completions)
+            (cons 'common-substr-start-pt common-substr-start-pt)
+            (cons 'common-substr-end-pt   common-substr-end-pt))
+      )))
+
+
+(defun matlab-display-completion-list (completions common-substring)
+  ;; In emacs 24.4 the common-substring is no longer needed
+  (let ((args (if (or (< emacs-major-version 24)
+                      (and (= emacs-major-version 24) (< emacs-minor-version 4)))
+                  (list completions common-substring)
+                (list completions))))
+    (apply 'display-completion-list args)))
+
+(defun matlab-shell-c-tab ()
+  "Send [TAB] to the currently running matlab process and retrieve completion
+to show using classing emacs tab completion."
+  (interactive)
+  (let ((matlab-shell-tab-company-available nil))
+    (matlab-shell-tab)))
+
+;; matlab-shell-tab,
+;;   This sends the command text at the prompt to emacsdocomplete.m which returns a list
+;;   of possible completions. To do this we use comint to 'type' emacsdocomplete(command)
+;;   in the *MATLAB* buffer and then we extract the result. The emacsdocomplete returns
+;;   a list of possible completions of the command where each completion starts with
+;;   zero or more characters of the command "suffix". For example, give a directory
+;;   containing files, foo.ext1 and foo.ext2,
+;;      >> ! mv foo.<TAB>
+;;   will call emacsdocomplete('! mv foo.') which returns (("foo.ext1") ("foo.ext2"))
+;;   where we have four characters "foo." matching the suffix of command. There can
+;;   be zero suffix match as in
+;;      >> !ls /usr/
+;;   which on Linux returns a long list of items e.g. (("bin", "include", ...))
+;;
+;;
+;;   Test cases (using R2016b):
+;;
+;;   >> h=figure;
+;;   >> h.Num<TAB>                   Should show Number
+;;   >> h.Number<TAB>                Should show Number and NumberTitle
+;;   >>          h.Num<TAB>          Should do same. The extra white space shouldn't mess things up.
+;;
+;;   >> h.NumberTitle<TAB>           Should display message "No completions"
+;;   >> set(h,'<TAB>                 Should display a long list
+;;      type P<TAB>                  Should narrow to Parent, Position, ...
+;;
+;;   >> !touch file.ext              Assuming no other fil* names in current directory.
+;;   >> !mv file.<TAB>               Should complete to file.ext
+;;   >> !mv file.ext<TAB>            Should do nothing
+;;
+;;   >> !/usr/b<TAB>                 Should complete to /usr/bin
+;;   >> !/usr/bin/cpp-4.<TAB>        Should complete to something like /usr/bin/cpp-4.9
+;;
+;;   >> ls /usr/include/byteswap.<TAB>  Some file with a '.' should complete correctly
+;;
+;;   >> !touch foo.ext1 foo.ext2
+;;   >> ! mv foo.<TAB>               Should give options foo.ext1 foo.ext2
+;;   >> ! mv foo.ext1<TAB>           Should say no completions
+;;   >> ! mv foo.ext1 <TAB>          Should say no completions (note the space before the TAB)
+;;
+;;   >> vdp
+;;   >> get_param('vdp','Pos<TAB>    Should show several completions
 (defun matlab-shell-tab ()
-   "Send [TAB] to the currently running matlab process and retrieve completion."
-   (interactive)
-   (if (not matlab-shell-ask-MATLAB-for-completions)
-       (call-interactively 'comint-dynamic-complete-filename)
-     (if (not (matlab-on-prompt-p))
-	 (error "Completions not available"))
-     (if nil
-	 ;; For older versions of MATLAB that don't have TAB
-	 ;; completion.
-	 (call-interactively 'comint-dynamic-complete-filename)
-       ;; Save the old command
-       (goto-char (point-max))
-       (let ((inhibit-field-text-motion t))
-	 (beginning-of-line))
-       (re-search-forward comint-prompt-regexp)
-       (let* ((lastcmd (buffer-substring (point) (matlab-point-at-eol)))
-	      (tempcmd lastcmd)
-	      (completions nil)
-	      (limitpos nil))
-	 ;; search for character which limits completion, and limit command to it
-	 (setq limitpos
-	       (if (string-match ".*\\([( /[.,;=']\\)" lastcmd)
-		   (1+ (match-beginning 1))
-		 0))
-	 (setq lastcmd (substring lastcmd limitpos))
-	 ;; Whack the old command so we can insert it back later.
-	 (delete-region (+ (point) limitpos) (matlab-point-at-eol))
-	 ;; double every single quote
-	 (while (string-match "[^']\\('\\)\\($\\|[^']\\)" tempcmd)
-	   (setq tempcmd (replace-match "''" t t tempcmd 1)))
-	 ;; collect the list
-	 (setq completions (matlab-shell-completion-list tempcmd))
-	 (goto-char (point-max))
-	 (if (eq (length completions) 1)
-	     ;; If there is only one, then there is an obvious thing to do.
-	     (progn
-	       (insert (car (car completions)))
-	       ;; kill completions buffer if still visible
-	       (matlab-shell-tab-hide-completions))
-	   (let ((try (try-completion lastcmd completions)))
-	     ;; Insert in a good completion.
-	     (cond ((or (eq try nil) (eq try t)
-			(and (stringp try)
-			     (string= try lastcmd)))
-		    (insert lastcmd)
-		    ;; Before displaying the completions buffer, check to see if
-		    ;; the completions window is already displayed, or if there is
-		    ;; a next window to display.  This determines how to remove the
-		    ;; completions later.
-		    (if (get-buffer-window "*Completions*")
-			nil ;; Recycle old value of the display flag.
-		      ;; Else, reset this variable.
-		      (setq matlab-shell-window-exists-for-display-completion-flag
-			    ;; Else, it isn't displayed, save an action.
-			    (if (eq (next-window) (selected-window))
-				;; If there is no other window, the post action is
-				;; to delete.
-				'delete
-			      ;; If there is a window to display, the post
-			      ;; action is to bury.
-			      'bury)))
-		    (with-output-to-temp-buffer "*Completions*"
-		      (display-completion-list (mapcar 'car completions) lastcmd)))
-		   ((stringp try)
-		    (insert try)
-		    (matlab-shell-tab-hide-completions))
-		   (t
-		    (insert lastcmd))))
-	   )))))
+  "Send [TAB] to the currently running matlab process and retrieve completion."
+  (interactive)
+  (if (and matlab-shell-tab-company-available matlab-shell-tab-use-company)
+      ;; We don't add to company-backends because we bind TAB to matlab-shell-tab
+      ;; which means completions must be explicitly requested. The default
+      ;; company-complete tries to complete as you type which doesn't work
+      ;; so well because it can take MATLAB a bit to compute completions.
+      (call-interactively 'company-matlab-shell)
+    (if (not matlab-shell-ask-MATLAB-for-completions)
+        (call-interactively 'comint-dynamic-complete-filename)
+      (let* ((inhibit-field-text-motion t)
+             (completion-info        (matlab-shell-get-completion-info))
+             (last-cmd               (cdr (assoc 'last-cmd completion-info)))
+             (common-substr          (cdr (assoc 'common-substr completion-info)))
+             (limit-pos              (cdr (assoc 'limit-pos completion-info)))
+             (completions            (cdr (assoc 'completions completion-info)))
+             (common-substr-start-pt (cdr (assoc 'common-substr-start-pt completion-info)))
+             (common-substr-end-pt   (cdr (assoc 'common-substr-end-pt completion-info))))
+
+        ;; Whack the old command 'substring' that is starting part of the
+        ;; completions so we can insert it back later
+        (delete-region common-substr-start-pt common-substr-end-pt)
+        (goto-char (point-max))
+        ;; Process the completions
+        (if (eq (length completions) 1)
+            ;; If there is only one, then there is an obvious thing to do.
+            (progn
+              (insert (car (car completions)))
+              ;; kill completions buffer if still visible
+              (matlab-shell-tab-hide-completions))
+          ;; else handle multiple completions
+          (let ((try nil))
+            (setq try (try-completion common-substr completions))
+            ;; Insert in a good completion.
+            (cond ((or (eq try nil) (eq try t)
+                       (and (stringp try)
+                            (string= try common-substr)))
+                   (insert common-substr)
+                   ;; Before displaying the completions buffer, check to see if
+                   ;; the completions window is already displayed, or if there is
+                   ;; a next window to display.  This determines how to remove the
+                   ;; completions later.
+                   (if (get-buffer-window "*Completions*")
+                       nil ;; Recycle old value of the display flag.
+                     ;; Else, reset this variable.
+                     (setq matlab-shell-window-exists-for-display-completion-flag
+                           ;; Else, it isn't displayed, save an action.
+                           (if (eq (next-window) (selected-window))
+                               ;; If there is no other window, the post action is
+                               ;; to delete.
+                               'delete
+                             ;; If there is a window to display, the post
+                             ;; action is to bury.
+                             'bury)))
+                   (with-output-to-temp-buffer "*Completions*"
+                     (matlab-display-completion-list (mapcar 'car completions)
+                                                     common-substr)))
+                  ((stringp try)
+                   (insert try)
+                   (matlab-shell-tab-hide-completions))
+                  (t
+                   (insert common-substr))))
+          )))))
 
 (defun matlab-shell-tab-hide-completions ()
   "Hide any completion windows for `matlab-shell-tab'."
@@ -5140,7 +5356,7 @@ Similar to  `comint-send-input'."
 				 'matlab-shell-save-and-go-history)))
     (if (matlab-with-emacs-link)
 	;; Execute the current file in MATLAB
-	(matlab-eei-run)
+	(when (fboundp 'matlab-eei-run) (matlab-eei-run)) ;; XXX where is matlab-eei-run?
 
       ;; No buffer?  Make it!
       (if (not (get-buffer msbn)) (matlab-shell))
@@ -5206,7 +5422,7 @@ This command requires an active MATLAB shell."
 	(inhibit-field-text-motion t))
     (if (matlab-with-emacs-link)
 	;; Run the region w/ Emacs Link
-	(matlab-eei-eval-region beg end)
+	(when (fboundp 'matlab-eei-eval-region) (matlab-eei-eval-region beg end))
 
       (save-excursion
 	(setq msbn (matlab-shell-buffer-barf-not-running))
@@ -5253,7 +5469,7 @@ This command requires an active MATLAB shell."
  (if (and transient-mark-mode mark-active)
      (matlab-shell-run-region (mark) (point))
    (matlab-shell-run-region (matlab-point-at-bol) (matlab-point-at-eol))))
- 
+
 
 ;;; MATLAB Shell Commands =====================================================
 
@@ -5321,8 +5537,7 @@ BUFFER is the buffer to output to, and OUTPUT is the text to insert."
 	   (string-match "^.+$" output)
 	   (message (substring output (match-beginning 0)(match-end 0))))
 	  (t (with-output-to-temp-buffer buffer (princ output))
-	     (save-excursion
-	       (set-buffer buffer)
+             (with-current-buffer buffer
 	       (matlab-shell-help-mode))))))
 
 (defun matlab-shell-run-command (command)
@@ -5367,7 +5582,7 @@ This uses the lookfor command to find viable commands."
   (let ((ap (matlab-shell-collect-command-output
 	     (concat "lookfor " matlabregex))))
     (matlab-output-to-temp-buffer "*MATLAB Apropos*" ap)))
-  
+
 (defun matlab-on-prompt-p ()
   "Return t if we MATLAB can accept input."
   (save-excursion
@@ -5394,48 +5609,73 @@ This uses the lookfor command to find viable commands."
 It's output is returned as a string with no face properties.  The text output
 of the command is removed from the MATLAB buffer so there will be no
 indication that it ran."
-  (let ((msbn (matlab-shell-buffer-barf-not-running))
-	(pos nil)
-	(str nil)
-	(lastcmd)
-	(inhibit-field-text-motion t))
-    (save-excursion
-      (set-buffer msbn)
-      (if (not (matlab-on-prompt-p))
-	  (error "MATLAB shell must be non-busy to do that"))
-      ;; Save the old command
-      (goto-char (point-max))
-      (beginning-of-line)
-      (re-search-forward comint-prompt-regexp)
-      (setq lastcmd (buffer-substring (point) (matlab-point-at-eol)))
-      (delete-region (point) (matlab-point-at-eol))
-      ;; We are done error checking, run the command.
-      (setq pos (point))
-      (comint-simple-send (get-buffer-process (current-buffer))
-			  (concat command "\n"))
-      ;;(message "MATLAB ... Executing command.")
-      (goto-char (point-max))
-      (while (or (>= (+ pos (string-width command)) (point)) (not (matlab-on-empty-prompt-p)))
-	(accept-process-output (get-buffer-process (current-buffer)))
-	(goto-char (point-max))
-	;;(message "MATLAB reading...")
-	)
-      ;;(message "MATLAB reading...done")
-      (save-excursion
-	(goto-char pos)
-	(beginning-of-line)
-	(setq str (buffer-substring-no-properties (save-excursion
-						    (goto-char pos)
-						    (beginning-of-line)
-						    (forward-line 1)
-						    (point))
-						  (save-excursion
-						    (goto-char (point-max))
-						    (beginning-of-line)
-						    (point))))
-	(delete-region pos (point-max)))
-      (insert lastcmd))
-    str))
+  (let ((msbn (matlab-shell-buffer-barf-not-running)))
+    ;; We are unable to use save-excursion to save point position because we are
+    ;; manipulating the *MATLAB* buffer by erasing the current text typed at the
+    ;; MATLAB prompt (where point is) and then we send command to MATLAB and
+    ;; grab the result. After this we erase the output from command and then
+    ;; restore the current text at the MATLAB prompt and move to start-point.
+    ;; Note, save-excursion works by tracking `point-marker' and when you manipulate
+    ;; the text at point, `point-marker' moves causing save-exursion to move
+    ;; the point in to a location we don't want. See:
+    ;; http://emacs.stackexchange.com/questions/7574/why-save-excursion-doesnt-save-point-position
+    ;; Ideally there would be some way to prevent the *MATLAB* buffer from refreshing
+    ;; as we are interacting with it, but I couldn't figure out a way to do that.
+    (with-current-buffer msbn
+      (save-window-excursion
+        (let ((pos nil)
+              (str nil)
+              (lastcmd)
+              (inhibit-field-text-motion t)
+              (start-point (point)))
+          (if (not (matlab-on-prompt-p))
+              (error "MATLAB shell must be non-busy to do that"))
+
+          ;; Save the old command
+          (goto-char (point-max))
+          (beginning-of-line)
+          (re-search-forward comint-prompt-regexp)
+          ;; Backup if there are extra spaces. To see why, try tab completion on command with
+          ;; leading spaces, e.g.
+          ;; >> h=figure;
+          ;; >>                    h.Num<TAB>
+          (re-search-backward ">")
+          (forward-char 2)
+          (setq lastcmd (buffer-substring (point) (matlab-point-at-eol)))
+          (delete-region (point) (matlab-point-at-eol))
+          ;; We are done error checking, run the command.
+          (setq pos (point))
+          ;; Note, comint-simple-send in emacs 24.4 appends a newline and code below assumes
+          ;; one prompt indicates command completed, so don't append a newline.
+          (comint-simple-send (get-buffer-process (current-buffer)) command)
+          ;; Wait for the command to finish, by looking for new prompt.
+          (goto-char (point-max))
+          ;; Turn on C-g by setting inhibit-quit to nil. This is needed to prevent message:
+          ;;  "Blocking call to accept-process-output with quit inhibited!! [115 times]"
+          ;; when using `company-matlab-shell' for TAB completions.
+          (let ((inhibit-quit nil))
+            (while (or (>= (+ pos (string-width command)) (point)) (not (matlab-on-empty-prompt-p)))
+              (accept-process-output (get-buffer-process (current-buffer)))
+              (goto-char (point-max))))
+
+          ;; Get result of command into str
+          (goto-char pos)
+          (setq str (buffer-substring-no-properties (save-excursion
+                                                      (goto-char pos)
+                                                      (beginning-of-line)
+                                                      (forward-line 1)
+                                                      (point))
+                                                    (save-excursion
+                                                      (goto-char (point-max))
+                                                      (beginning-of-line)
+                                                      (point))))
+          ;; delete the result of command
+          (delete-region pos (point-max))
+          ;; restore contents of buffer so it looks like nothing happened.
+          (insert lastcmd)
+          (goto-char start-point)
+          ;; return result 'string' from executing MATLAB command
+          str)))))
 
 (defun matlab-shell-send-string (string)
   "Send STRING to the currently running matlab process."
@@ -5472,7 +5712,7 @@ show up in reverse order."
       (while (and (not url)
                   (setq p (matlab-previous-overlay-change p))
                   (not (eq p (point-min))))
-        (setq url 
+        (setq url
 	      (if stacktop
 		  (matlab-url-stack-top-at p)
 		(matlab-url-at p))))
@@ -5489,7 +5729,8 @@ If DEBUG is non-nil, then setup GUD debugging features."
 	 (setq ef (concat (substring ef 0 (match-beginning 0)) ".m")))
 	)
   (find-file-other-window ef)
-  (goto-line (string-to-number el))
+  (with-no-warnings
+    (goto-line (string-to-number el)))
   (when debug
     (setq gud-last-frame (cons (buffer-file-name) (string-to-number el)))
     (gud-display-frame))
@@ -5508,7 +5749,7 @@ If DEBUG is non-nil, then setup GUD debugging features."
                (el (substring url (match-beginning 2) (match-end 2)))
                (ec (substring url (match-beginning 3) (match-end 3))))
            (matlab-find-other-window-file-line-column ef el ec debug)))
-        ((string-match "^matlab: *\\(.*\\)$" url)
+        ((string-match "^matlab:*\\(.*\\)$" url)
          (process-send-string
           (get-buffer-process gud-comint-buffer)
           (concat (substring url (match-beginning 1) (match-end 1)) "\n")))))
@@ -5638,7 +5879,10 @@ Maintain state in our topic browser buffer."
 
 ;; View-major-mode is an emacs20 thing.  This gives us a small compatibility
 ;; layer.
-(if (not (fboundp 'view-major-mode)) (defalias 'view-major-mode 'view-mode))
+(eval-and-compile
+  (if (not (fboundp 'view-major-mode)) (defalias 'view-major-mode 'view-mode)))
+
+(defvar matlab-shell-help-mode-menu) ;; Quiet compiler warning (var is defined below)
 
 (define-derived-mode matlab-shell-help-mode
   view-major-mode "M-Help"
@@ -5667,6 +5911,7 @@ Commands:
     (define-key matlab-shell-help-mode-map [button2] 'matlab-shell-topic-click)
   (define-key matlab-shell-help-mode-map [mouse-2] 'matlab-shell-topic-click))
 
+(defvar mode-motion-hook) ;; quiet compiler warning (used in XEmacs)
 (easy-menu-define
  matlab-shell-help-mode-menu matlab-shell-help-mode-map
  "MATLAB shell topic menu"
@@ -5679,6 +5924,8 @@ Commands:
    ["Topic Browser" matlab-shell-topic-browser t]
    "----"
    ["Exit" bury-buffer t]))
+
+(defvar matlab-shell-topic-mode-menu) ;; forward declaration to quite compiler warning
 
 (define-derived-mode matlab-shell-topic-mode
   matlab-shell-help-mode "M-Topic"
@@ -5708,7 +5955,7 @@ Commands:
 
 (defun matlab-shell-topic-browser-create-contents (subtopic)
   "Fill in a topic browser with the output from SUBTOPIC."
-  (toggle-read-only -1)
+  (matlab-read-only-mode -1)
   (erase-buffer)
   (insert (matlab-shell-collect-command-output (concat "help " subtopic)))
   (goto-char (point-min))
@@ -5717,7 +5964,7 @@ Commands:
   (setq matlab-shell-topic-current-topic subtopic)
   (if (not (string-match "XEmacs" emacs-version))
       (matlab-shell-topic-mouse-highlight-subtopics))
-  (toggle-read-only 1)
+  (matlab-read-only-mode 1)
   )
 
 (defun matlab-shell-topic-click (e)
@@ -5772,27 +6019,31 @@ buffer."
 				   'mouse-face 'highlight)))))
 	(setq el (cdr el))))))
 
+(defvar mouse-grabbed-buffer) ;; Suppress compilation warning in Emacs (an XEmacs only variable)
+(defvar mode-motion-extent)   ;; Suppress compilation warning in Emacs (an XEmacs only variable)
+
 (defun matlab-shell-topic-highlight-line (event)
   "A value of `mode-motion-hook' which will highlight topics under the mouse.
 EVENT is the user mouse event."
   ;; XEMACS only function
-  (let* ((buffer (event-buffer event))
-	 (point (and buffer (event-point event))))
+  (let* ((buffer (when (fboundp 'event-buffer) (event-buffer event)))
+	 (point (and buffer (when (fboundp 'event-point) (event-point event)))))
     (if (and buffer (not (eq buffer mouse-grabbed-buffer)))
 	(save-excursion
 	  (save-window-excursion
 	    (set-buffer buffer)
-	    (mode-motion-ensure-extent-ok event)
+	    (when (fboundp 'mode-motion-ensure-extent-ok) (mode-motion-ensure-extent-ok event))
 	    (if (not point)
-		(detach-extent mode-motion-extent)
+		(when (fboundp 'detach-extent) (detach-extent mode-motion-extent))
 	      (goto-char point)
 	      (end-of-line)
 	      (setq point (point))
 	      (beginning-of-line)
 	      (if (or (looking-at "^\\w+/\\(\\w+\\)[ \t]+-")
 		      (looking-at "^[ \t]+\\(\\(\\w\\|_\\)+\\)[ \t]+-"))
-		  (set-extent-endpoints mode-motion-extent (point) point)
-		(detach-extent mode-motion-extent))))))))
+		  (when (fboundp 'set-extent-endpoints)
+                    (set-extent-endpoints mode-motion-extent (point) point))
+		(when (fboundp 'detach-extent) (detach-extent mode-motion-extent)))))))))
 
 
 ;;; M File path stuff =========================================================

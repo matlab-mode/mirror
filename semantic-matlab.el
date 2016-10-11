@@ -515,6 +515,7 @@ cannot derive an argument list for them."
     nil)
   "The system include paths from MATLAB.")
 
+(defvar semantic-idle-summary-function) ;; quiet compiler warning (not sure where this is defined)
 (defvar-mode-local matlab-mode semantic-idle-summary-function
   'semantic-idle-summary-format-matlab-mode
   "Function to use when displaying tag information during idle time.")
@@ -538,8 +539,9 @@ cannot derive an argument list for them."
     (when (looking-at "\\(\\s-+\\)(")
       (delete-char (length (match-string 1))))
     (when semantic-matlab-display-docstring
-      (fame-message-nolog
-       (semantic-idle-summary-format-matlab-mode tag nil t)))))
+      (if (fboundp 'fame-message-nolog)
+          (fame-message-nolog
+           (semantic-idle-summary-format-matlab-mode tag nil t))))))
 
 (define-mode-local-override semantic-ctxt-current-symbol
   matlab-mode (&optional point)
@@ -591,7 +593,7 @@ This will include a list of type/field names when applicable."
 		       (match-end 0)))
 	 (list sym endsym bounds)))))
 
-
+(defvar semantic-imenu-bucketize-type-members) ;; quiet compiler warning
 ;;;###autoload
 (defun semantic-default-matlab-setup ()
   "Set up a buffer for parsing of MATLAB files."
