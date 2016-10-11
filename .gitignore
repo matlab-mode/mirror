@@ -13,3 +13,4 @@ MISC
 
 # Generated files
 *.elc
+matlab-load.el
