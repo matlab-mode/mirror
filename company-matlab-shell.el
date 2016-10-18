@@ -35,17 +35,26 @@ performed at the current point."
         'stop  ;; tell company can't complete when point is not in the prompt
       (let* ((buf-name (buffer-name (current-buffer)))
              (ci (matlab-shell-get-completion-info))
-             (common-substr (cdr (assoc 'common-substr ci))))
-        (puthash buf-name ci company-matlab-shell--ci)
-        ;; command to be completed
-        common-substr
-      ))))
+             (common-substr (cdr (assoc 'common-substr ci)))
+             (did-completion (cdr (assoc 'did-completion ci))))
+        ;; If did-completion, then matlab-shell-get-completion-info updated the
+        ;; *MATLAB* buffer by deleting text and calling (insert replacement-text), and
+        ;; we have no more completion info.
+        (if did-completion
+            ;; Tell company to abort completion. This causes "Cannot complete at point" and
+            ;; there doesn't seem to be a way to protect against this message.
+            nil                 
+          (puthash buf-name ci company-matlab-shell--ci)
+          ;; command to be completed
+          common-substr
+          )))))
 
 
 (defun company-matlab-shell-get-completions ()
   (let* ((ci (if (eq major-mode 'matlab-shell-mode)
                  (gethash (buffer-name (current-buffer)) company-matlab-shell--ci)))
          (completions (if ci (cdr (assoc 'completions ci)))))
+    (if ci (remhash (buffer-name (current-buffer)) company-matlab-shell--ci))
     (mapcar 'car completions)))
 
 ;;;###autoload

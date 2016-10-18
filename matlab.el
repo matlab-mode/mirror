@@ -320,7 +320,7 @@ amount to use if MAXIMUM is reached."
   "*If true, add in a few simulink customizations.
 This variable's state is mostly useful when set at load time when
 simulink font lock keywords can be removed.  This will handle
-additional cases as the need arrises."
+additional cases as the need arises."
   :group 'matlab
   :type 'boolean)
 
@@ -1000,7 +1000,7 @@ Customizing this variable is only useful if `regexp-opt' is available."
    ;; The global keyword defines some variables.  Mark them.
    '("^\\s-*global\\s-+"
      ("\\(\\w+\\)\\(\\s-*=[^,; \t\n]+\\|[, \t;]+\\|$\\)"
-      nil nil (1 font-lock-variable-name-face)))
+      nil  nil (1 font-lock-variable-name-face)))
    ;; Handle graphics stuff
    (list
     (if (fboundp 'regexp-opt)
@@ -1041,7 +1041,7 @@ ui\\(cont\\(ext\\(\\|menu\\)\\|rol\\)\\|menu\\|\
     (list (concat "^\\s-*function\\>[ \t\n.]*"
 		  "\\(\\(\\[[^]]*\\]\\|\\sw+\\)[ \t\n.]*=[ \t\n.]*\\)?"
 		  "\\sw+\\s-*(")
-	  '("\\s-*\\(\\sw+\\)\\s-*[,)]" nil nil
+	  '("\\s-*\\(\\sw+\\)\\s-*[,)]" nil  nil
 	    (1 font-lock-variable-name-face)))
     ;; I like variables for FOR loops
     '("\\<\\(for\\|parfor\\)\\s-+\\(\\sw+\\)\\s-*=\\s-*\
@@ -1060,7 +1060,7 @@ ui\\(cont\\(ext\\(\\|menu\\)\\|rol\\)\\|menu\\|\
     ;; Define these as variables since this is about as close
     ;; as matlab gets to variables
     (list (concat "\\<" matlab-indent-past-arg1-functions "\\s-*")
-	  '("(\\s-*\\(\\w+\\)\\s-*\\(,\\|)\\)" nil nil
+	  '("(\\s-*\\(\\w+\\)\\s-*\\(,\\|)\\)" nil  nil
 	    (1 font-lock-variable-name-face)))
     ))
   "Expressions to highlight in MATLAB mode.")
@@ -1079,7 +1079,7 @@ ui\\(cont\\(ext\\(\\|menu\\)\\|rol\\)\\|menu\\|\
 	  '(1 font-lock-reference-face prepend))
     (list (concat "^" matlab-comment-line-s "\\s-*"
 		  "See also\\s-+")
-	  '("\\([A-Z][A-Z0-9]+\\)\\([,.]\\| and\\|$\\) *" nil nil
+	  '("\\([A-Z][A-Z0-9]+\\)\\([,.]\\| and\\|$\\) *" nil  nil
 	    (1 font-lock-reference-face prepend)))
     (list (concat "^" matlab-comment-line-s "\\s-*"
 		  "\\(\\$" "Revision" "[^\n$]+\\$\\)")
@@ -1177,7 +1177,7 @@ Convenient template insertion commands:
  \\[matlab-insert-next-case] - Insert the next CASE condition in a SWITCH.
  \\[matlab-insert-end-block] - Insert a matched END statement.  With \
 optional ARG, reindent.
- \\[matlab-stringify-region] - Convert plaintext in region to a string \
+ \\[matlab-stringify-region] - Convert plain text in region to a string \
 with correctly quoted chars.
 
 Variables:
@@ -1412,7 +1412,7 @@ Optional argument RESTRICT is where to restrict the search."
 	  (if (not ms)
 	      (progn
 		(goto-char origin)
-		(error "Scan Error: List missmatch")))
+		(error "Scan Error: List mismatch")))
 	  ;; View it's match.
 	  (let ((s (match-string 0)))
 	    (if (string-match "\\s(" s)
@@ -1439,7 +1439,7 @@ Return nil if it is being used to dereference an array."
 	    ;; the condition was, or why the simple case doesn't handle it.
 	    ;;
 	    ;; The above replacement fixes a case where a continuation in an array
-	    ;; befuddles the indenter.
+	    ;; befuddles the identifier.
 	    ;;		      (progn ;;(matlab-end-of-command (point))
 	    ;;			(end-of-line)
 	    ;;			(if (> p (point))
@@ -1537,7 +1537,7 @@ Excludes function.")
   "case\\|otherwise"
   "Keywords which initialize new blocks, but don't have explicit ends.
 Thus, they are endless.  A new case or otherwise will end a previous
-endless block, and and end will end this block, plus any outside normal
+endless block, and end will end this block, plus any outside normal
 blocks.")
 
 (defun matlab-block-re ()
@@ -1577,7 +1577,7 @@ blocks.")
 (defun matlab-match-function-re ()
   "Expression to match a function start line.
 There are no reliable numeric matches in this expression.
-Know that `match-end' of 0 is the end of the functin name."
+Know that `match-end' of 0 is the end of the function name."
   ;; old function was too unstable.
   ;;"\\(^function\\s-+\\)\\([^=\n]+=[ \t\n.]*\\)?\\(\\sw+\\)"
   (concat "\\(^\\s-*function\\b[ \t\n.]*\\)\\(\\(\\[[^]]*\\]\\|\\sw+\\)"
@@ -1781,7 +1781,7 @@ Optional argument INCLUDEELSE will stop on ELSE if it matches the starting IF."
   (let (p) ;; go to here if no error.
     (save-excursion ;; don't go anywhere if there is an error
       (matlab-navigation-syntax
-        ;; skip over preceeding whitespace
+        ;; skip over preceding whitespace
         (skip-chars-forward " \t\n;")
         (if (or (not (looking-at (concat "\\("
                                          (matlab-block-beg-pre)
@@ -1902,7 +1902,7 @@ Optional BEGINNING is where the command starts from."
                         (matlab-lattr-array-cont beginning))))
 	      ;; This hack is a short circuit.  If a user did not
 	      ;; correctly end a matrix, this will short-circuit
-	      ;; as soon as somethng that would never appear in a matrix
+	      ;; as soon as something that would never appear in a matrix
 	      ;; becomes visible.
 	      (not (save-excursion
 		     (beginning-of-line)
@@ -2019,7 +2019,7 @@ This is only useful for new versions of MATLAB where ... is optional."
       (save-excursion
 	(end-of-line)
 	(skip-chars-backward " \t")
-	;; Test for oporator incompleteness.
+	;; Test for operator incompleteness.
 	(setq imp
 	      (/= (point)
 		  ;; Careful, - means range in this expression.
@@ -2058,7 +2058,7 @@ based on what it ends with."
 (defun matlab-lattr-array-cont (&optional restrict)
   "Return non-nil if current line is in an array.
 If the entirety of the array is on this line, return nil.
-Optional option RESTRICT is the distrance to restrict the search."
+Optional option RESTRICT is the distance to restrict the search."
   (condition-case nil
       (save-excursion
 	(beginning-of-line)
@@ -2280,7 +2280,7 @@ are in what could be a an incomplete string."
 			  (<= (point) p)
 			  ;; Short circuit to fix this.
 			  (progn (setq instring nil) t)))
-	    ;; The next line emulates re-search-foward
+	    ;; The next line emulates re-search-forward
 	    (if instring (goto-char (match-end 0)))
 	    (if (or (= ?% (preceding-char))
 		    (= ?. (preceding-char)))
@@ -2565,7 +2565,7 @@ Argument CURRENT-INDENTATION is what the previous line recommends for indentatio
 			       (if (or (not matlab-align-to-paren)
 			               (looking-at "\\.\\.\\.\\|$"))
 				   ;; This could happen in another set
-				   ;; of matricies.  Find a current
+				   ;; of matrices.  Find a current
 				   ;; indentation based on the
 				   ;; previous line.
 				   (let ((cci (current-indentation)))
@@ -2590,7 +2590,7 @@ Argument CURRENT-INDENTATION is what the previous line recommends for indentatio
 			 ;; indentation to be somewhere else.
 			 (+ ci (cdr (cdr mi)))
 		       ;; If the indent delta is greater than the max,
-		       ;; use the max + currenti
+		       ;; use the max + current
 		       (if (and mi (> (- cc ci) (if (listp (cdr mi))
 						    (car (cdr mi))
 						  (cdr mi))))
@@ -2799,7 +2799,7 @@ Argument ARG specifies how many %s to insert."
 	 (goto-char (match-beginning 1))
 	 (if (> (current-column) comment-column) (delete-horizontal-space))
 	 (if (< (current-column) comment-column) (indent-to comment-column))
-         ;; Now see if the current line is too long to fit.  Can we backdent?
+         ;; Now see if the current line is too long to fit.  Can we back indent?
          (let ((eol-col (- (point-at-eol) (point-at-bol))))
            (when (> eol-col fill-column)
              (delete-horizontal-space)
@@ -2921,7 +2921,7 @@ not be broken.  This function will ONLY work on code."
 		(afterd (- (or after (matlab-point-at-eol)) (point)))
 		(befored (- (point) (or before (matlab-point-at-bol)))))
 	   ;; Here, if "before" is actually the beginning of our
-	   ;; indentation, then this is most obiously a bad place to
+	   ;; indentation, then this is most obviously a bad place to
 	   ;; break our lines.
 	   (if before
 	       (save-excursion
@@ -2978,7 +2978,7 @@ not be broken.  This function will ONLY work on code."
 				 (matlab-up-list 1)
 			       (error nil))
 			     (current-column))))
-	       ;; When evaluating list fudge factores, breaking on the
+	       ;; When evaluating list fudge factors, breaking on the
 	       ;; edge of a list, or at the beginning of a function
 	       ;; call can be more valuable than breaking on a symbol
 	       ;; of a mid-sized list.  As such, allow double-fudge
@@ -3091,7 +3091,7 @@ filling which will automatically insert `...' and the end of a line."
                                      nil ; already in an array.
                                      )
                                     ((or (looking-at "'\\s-*$") (looking-at "'\\s-*[^]]"))
-                                     ;; in a string, add an array ender.
+                                     ;; in a string, add an array end.
                                      (forward-char 1)
                                      (insert "]"))
                                     ((looking-at "'\\s-*\\.\\.\\.")
@@ -3239,7 +3239,7 @@ ARG is passed to `fill-paragraph' and will justify the text."
 		    (progn
 		      (matlab-auto-fill)
 		      (point)))
-		 (error "Fill algorith failed!"))
+		 (error "Fill algorithm failed!"))
 	     (if arg (save-excursion
 		       (forward-line -1)
 		       (matlab-justify-line))))
@@ -3258,7 +3258,7 @@ Reverse searches for the following are done first:
   2) if|for|while|switch <var>
   3) global variables
   4) function arguments.
-All elements are saved in a list, which is then uniqafied.
+All elements are saved in a list, which is then uniquified.
 If NEXT is non-nil, then the next element from the saved list is used.
 If the list is empty, then searches continue backwards through the code."
   (matlab-navigation-syntax
@@ -3387,7 +3387,7 @@ object."
 	first))))
 
 (defvar matlab-generic-list-placeholder nil
-  "Maintained by `matalb-generic-list-expand'.
+  "Maintained by `matlab-generic-list-expand'.
 Holds sub-lists of symbols left to be expanded.")
 
 (defun matlab-generic-list-expand (list prefix &optional next)
@@ -3952,7 +3952,7 @@ If optional FAST is non-nil, do not perform usually lengthy checks."
   (if matlab-highlight-cross-function-variables
       (if matlab-show-mlint-warnings
           (mlint-buffer)        ; became true, recompute mlint info
-        (mlint-clear-warnings))) ; became false, just remove hilighting
+        (mlint-clear-warnings))) ; became false, just remove highlighting
   ;; change mlint mode altogether
   (mlint-minor-mode
    (if (or matlab-highlight-cross-function-variables
@@ -3967,7 +3967,7 @@ If optional FAST is non-nil, do not perform usually lengthy checks."
   (if matlab-show-mlint-warnings
       (if matlab-highlight-cross-function-variables
           (mlint-buffer)        ; became true, recompute mlint info
-                                ; became false, just remove hilighting ...
+                                ; became false, just remove highlighting ...
         (mlint-clear-cross-function-variable-highlighting)))
   (mlint-minor-mode
    (if (or matlab-highlight-cross-function-variables
@@ -4212,7 +4212,7 @@ desired.  Optional argument FAST is not used."
        (save-excursion (matlab-comment-on-line))]
       ["Comment Region" matlab-comment-region t]
       ["Uncomment Region" matlab-uncomment-region t]
-      ["Indent Synactic Block" matlab-indent-sexp])
+      ["Indent Syntactic Block" matlab-indent-sexp])
      ("Insert"
       ["Complete Symbol" matlab-complete-symbol t]
       ["Comment" matlab-comment t]
@@ -4300,7 +4300,7 @@ Command switches are a list of strings.  Each entry is one switch."
 (defvar matlab-shell-running-matlab-version nil
   "The version of MATLAB running in the current `matlab-shell' buffer.")
 (defvar matlab-shell-running-matlab-release nil
-  "The release of MATLAB running in the curbrent `matlab-shell' buffer.")
+  "The release of MATLAB running in the current `matlab-shell' buffer.")
 (defvar matlab-shell-use-emacs-toolbox
   ;; matlab may not be on path.  (Name change, explicit load, etc)
   (let* ((mlfile (locate-library "matlab"))
@@ -4312,6 +4312,9 @@ Command switches are a list of strings.  Each entry is one switch."
   "The command to use as an external editor for MATLAB.
 Using emacsclient allows the currently running Emacs to also be the
 external editor for MATLAB.")
+
+(defvar matlab-custom-startup-command nil
+  "Custom matlab command to be run at startup")
 
 (defcustom matlab-shell-history-file "~/.matlab/%s/history.m"
   "*Location of the history file.
@@ -4716,7 +4719,7 @@ Includes a %s to match the kind of text format start regexp.")
 
 (defun matlab-shell-render-html-txt-format (str)
   "Render html text format inserted into the MATLAB shell buffer.
-Argument STR is the text for the text formater."
+Argument STR is the text for the text formatter."
   (if (string-match "</\\w+>" str)
       (save-excursion
         (while (re-search-backward matlab-txt-format-beg
@@ -4828,7 +4831,7 @@ Please note: The leading > character represents the current stack frame, so if
 there are several frames, this makes sure we pick the right one to popup.")
 
 (defun gud-matlab-massage-args (file args)
-  "Argument massager for starting matlab file.
+  "Argument message for starting matlab file.
 I don't think I have to do anything, but I'm not sure.
 FILE is ignored, and ARGS is returned."
   args)
@@ -4849,6 +4852,10 @@ FILE is ignored, and ARGS is returned."
 		   matlab-shell-emacsclient-command))
         ;; Setup is misconfigured - we need emacsinit because it tells us how to debug
         (error "unable to initialize matlab, emacsinit.m and other files missing"))
+      (if matlab-custom-startup-command
+          (process-send-string
+	   (get-buffer-process gud-comint-buffer)
+           (concat matlab-custom-startup-command "\n")))
       ;; Mark that we've seen at least one prompt.
       (setq matlab-prompt-seen t)
       ))
@@ -4981,11 +4988,13 @@ Optional argument ARG describes the number of chars to delete."
 
 (defun matlab-shell-completion-list (str)
   "Get a list of completions from MATLAB.
-STR is a substring to complete."
+STR is a command substring to complete."
   (let* ((msbn (matlab-shell-buffer-barf-not-running))
          (cmd (concat "emacsdocomplete('" str "')"))
          (comint-scroll-show-maximum-output nil)
          output
+         (replacement-text "")
+         (cmd-text-to-replace "")
          (completions nil))
     (with-current-buffer msbn
       (if (not (matlab-on-prompt-p))
@@ -4994,9 +5003,32 @@ STR is a substring to complete."
       (if (not (string-match "emacs_completions_output =" output))
           (error "Internal error, '%s' returned unexpected output, %s" cmd output))
       (setq output (substring output (match-end 0)))
+      (when (string-match "^'\\([^']+\\)' --> '\\([^']*\\)'" output)
+        ;; 'CMD_TEXT_TO_REPLACE' --> 'REPLACEMENT_TEXT'
+        ;;     'OPTION1'
+        ;;     'OPTION2'
+        ;;     ...
+        ;; Note, the CMD_TEXT_TO_REPLACE line is only present when there needs
+        ;; to be replacement, e.g. imagine a command that takes glob patterns
+        ;;   >> mycmd foo*ba<TAB>
+        ;;   'foo*-bar' --> 'foo-and-bar'
+        ;;     '-or-goo'
+        ;;     '-or-too'
+        ;; which completes to either 'foo-and-bar-or-goo' OR 'foo-and-bar-or-too'.
+        ;; If there is only one completion that needs replacement, don't have options:
+        ;;   >> mycmd foo*ba*-too<TAB>
+        ;;   'foo*ba*-too' --> 'foo-and-bar-or-too'
+        ;; The replacement line is not present when the completion just appends to the
+        ;; command str, e.g.
+        ;;   >> mycmd foo-and-bar<TAB>
+        ;;       '-or-goo'
+        ;;       '-or-too'
+        (setq cmd-text-to-replace (match-string 1 output))
+        (setq replacement-text (match-string 2 output))
+        (setq output (substring output (match-end 0))))
       ;; Parse the output string.
       (while (string-match "'" output)
-        ;; Hack off the preceeding quote
+        ;; Hack off the preceding quote
         (setq output (substring output (match-end 0)))
         (string-match "'" output)
         ;; we are making a completion list, so that is a list of lists.
@@ -5004,7 +5036,10 @@ STR is a substring to complete."
                                 completions)
               output (substring output (match-end 0))))
       ;; Return them
-      (nreverse completions))))
+      (list (cons 'cmd-text-to-replace cmd-text-to-replace)
+            (cons 'replacement-text replacement-text)
+            (cons 'completions (nreverse completions)))
+      )))
 
 (defun matlab-shell-which-fcn (fcn)
   "Get the location of FCN's M file.
@@ -5037,7 +5072,7 @@ non-nil if FCN is a builtin."
 	(cons (substring output 0 (match-beginning 0)) nil))))))
 
 (defun matlab-shell-matlabroot ()
-  "Get the location of of this shell's root.
+  "Get the location of this shell's root.
 Returns a string path to the root of the executing MATLAB."
   (save-excursion
     (let* ((msbn (matlab-shell-buffer-barf-not-running))
@@ -5051,7 +5086,7 @@ Returns a string path to the root of the executing MATLAB."
       (if (and (boundp 'matlab-shell-matlabroot-run)
 	       matlab-shell-matlabroot-run)
 	  matlab-shell-matlabroot-run
-	;; If we haven't cache'd it, calculate it now.
+	;; If we haven't cached it, calculate it now.
 
 	(if (not (matlab-on-prompt-p))
 	    (error "MATLAB shell must be non-busy to do that"))
@@ -5086,7 +5121,7 @@ is the common starting substring of each completion in completions."
     limit-pos))
 
 (defun matlab-shell-get-completion-info ()
-  "Helper function for `matlab-shell-tab' and `company-matlab-shell' to get competion
+  "Helper function for `matlab-shell-tab' and `company-matlab-shell' to get completion
 information for item at point"
   (if (or (not (= (point) (point-max)))
           (not (matlab-on-prompt-p)))
@@ -5095,15 +5130,12 @@ information for item at point"
           (last-cmd nil)
           (last-cmd-start-point nil)
           (common-substr nil)
-          (last-cmd-quoted nil)
           (limit-pos nil)
           (completions nil)
           (common-substr-start-pt nil)
-          (common-substr-end-pt nil))
-      ;; 1. Load last-cmd which is the command we are completing on.
-      ;; 2. Load last-cmd-quoted which the expression typed ("!mv
-      ;;    file."). Note, this has single quotes doubled up so we can ask
-      ;;    MATLAB for completions on last-cmd-quoted.
+          (common-substr-end-pt nil)
+          (did-completion nil))
+      ;; Load last-cmd which is the command we are completing on.
       ;; We need to avoid altering point because when we ask for completions, we send
       ;; emacsdocomplete(last-cmd-quoted) to the MATLAB command window and then grab the results
       ;; and erase them.
@@ -5111,13 +5143,9 @@ information for item at point"
         (goto-char (point-max))
         (beginning-of-line)
         (re-search-forward comint-prompt-regexp)
+        (setq last-cmd-start-point (point))
         ;; save the old (last) command
         (setq last-cmd (buffer-substring (point) (matlab-point-at-eol))))
-
-      (setq last-cmd-quoted last-cmd)
-      ;; double every single quote
-      (while (string-match "[^']\\('\\)\\($\\|[^']\\)" last-cmd-quoted)
-        (setq last-cmd-quoted (replace-match "''" t t last-cmd-quoted 1)))
 
       ;; Get the list of completions.
       ;; When obtaining completions, we can't use save-excursion because we are
@@ -5128,7 +5156,28 @@ information for item at point"
       ;; emacsdocompletion('statement') to matlab and matlab produces output in
       ;; the *MATLAB* buffer, then `matlab-shell-completion-list' removes the
       ;; output from the *MATLAB* buffer.
-      (setq completions (matlab-shell-completion-list last-cmd-quoted))
+      (let ((last-cmd-quoted last-cmd))
+        ;; Load last-cmd-quoted which the expression typed (e.g. "!mv file.").
+        ;; Note, this has single quotes doubled up so we can ask
+        ;; MATLAB for completions on last-cmd-quoted.
+        (while (string-match "[^']\\('\\)\\($\\|[^']\\)" last-cmd-quoted)
+          (setq last-cmd-quoted (replace-match "''" t t last-cmd-quoted 1)))
+
+        (let* ((completion-list (matlab-shell-completion-list last-cmd-quoted))
+               (cmd-text-to-replace (cdr (assoc 'cmd-text-to-replace completion-list))))
+          (setq completions (cdr (assoc 'completions completion-list)))
+          (when cmd-text-to-replace
+            ;; need to alter the command to replace replacement-text with the common substring
+            (let ((replacement-text (cdr (assoc 'replacement-text completion-list)))
+                  (last-cmd-start-len (- (length last-cmd) (length cmd-text-to-replace))))
+              ;; Replace the text typed in the *MATLAB* and update last-cmd
+              (goto-char (+ last-cmd-start-point last-cmd-start-len))
+              (delete-region (point) (matlab-point-at-eol))
+              (insert replacement-text)
+              (setq last-cmd (concat (substring last-cmd 0 last-cmd-start-len) replacement-text))
+              (if (not completions)
+                  (setq did-completion t))
+              ))))
 
       ;; Consider
       ;;   >> ! touch foo.ext1 foo.ext2
@@ -5136,10 +5185,10 @@ information for item at point"
       ;; 'completions' will contain (("foo.ext1") ("foo.ext2")) and
       ;; common-substr will be "foo." which is used in displaying the
       ;; completions. The limit-pos in this case will be 5 and
-      ;; last-cmd is "! mv foo."
+      ;; last-cmd "! mv foo."
       (setq limit-pos (matlab-shell-get-completion-limit-pos last-cmd completions))
       (setq common-substr (substring last-cmd limit-pos))
-
+      
       ;; Mark the subfield of the completion result so we can say no completions
       ;; if there aren't any otherwise we need to remove it.
       (save-excursion
@@ -5155,13 +5204,13 @@ information for item at point"
             (setq completions nil))) ;; force display of "No completions"
       ;; Result
       (list (cons 'last-cmd               last-cmd)
-            (cons 'last-cmd-start-point   last-cmd-start-point)
             (cons 'common-substr          common-substr)
             (cons 'limit-pos              limit-pos)
             (cons 'completions            completions)
             (cons 'common-substr-start-pt common-substr-start-pt)
-            (cons 'common-substr-end-pt   common-substr-end-pt))
-      )))
+            (cons 'common-substr-end-pt   common-substr-end-pt)
+            (cons 'did-completion         did-completion)
+      ))))
 
 
 (defun matlab-display-completion-list (completions common-substring)
@@ -5239,52 +5288,54 @@ to show using classing emacs tab completion."
              (limit-pos              (cdr (assoc 'limit-pos completion-info)))
              (completions            (cdr (assoc 'completions completion-info)))
              (common-substr-start-pt (cdr (assoc 'common-substr-start-pt completion-info)))
-             (common-substr-end-pt   (cdr (assoc 'common-substr-end-pt completion-info))))
+             (common-substr-end-pt   (cdr (assoc 'common-substr-end-pt completion-info)))
+             (did-completion         (cdr (assoc 'did-completion completion-info))))
 
-        ;; Whack the old command 'substring' that is starting part of the
-        ;; completions so we can insert it back later
-        (delete-region common-substr-start-pt common-substr-end-pt)
-        (goto-char (point-max))
-        ;; Process the completions
-        (if (eq (length completions) 1)
-            ;; If there is only one, then there is an obvious thing to do.
-            (progn
-              (insert (car (car completions)))
-              ;; kill completions buffer if still visible
-              (matlab-shell-tab-hide-completions))
-          ;; else handle multiple completions
-          (let ((try nil))
-            (setq try (try-completion common-substr completions))
-            ;; Insert in a good completion.
-            (cond ((or (eq try nil) (eq try t)
-                       (and (stringp try)
-                            (string= try common-substr)))
-                   (insert common-substr)
-                   ;; Before displaying the completions buffer, check to see if
-                   ;; the completions window is already displayed, or if there is
-                   ;; a next window to display.  This determines how to remove the
-                   ;; completions later.
-                   (if (get-buffer-window "*Completions*")
-                       nil ;; Recycle old value of the display flag.
-                     ;; Else, reset this variable.
-                     (setq matlab-shell-window-exists-for-display-completion-flag
-                           ;; Else, it isn't displayed, save an action.
-                           (if (eq (next-window) (selected-window))
-                               ;; If there is no other window, the post action is
-                               ;; to delete.
-                               'delete
-                             ;; If there is a window to display, the post
-                             ;; action is to bury.
-                             'bury)))
-                   (with-output-to-temp-buffer "*Completions*"
-                     (matlab-display-completion-list (mapcar 'car completions)
-                                                     common-substr)))
-                  ((stringp try)
-                   (insert try)
-                   (matlab-shell-tab-hide-completions))
-                  (t
-                   (insert common-substr))))
-          )))))
+        (when (not did-completion)
+          ;; Whack the old command 'substring' that is starting part of the
+          ;; completions so we can insert it back later
+          (delete-region common-substr-start-pt common-substr-end-pt)
+          (goto-char (point-max))
+          ;; Process the completions
+          (if (eq (length completions) 1)
+              ;; If there is only one, then there is an obvious thing to do.
+              (progn
+                (insert (car (car completions)))
+                ;; kill completions buffer if still visible
+                (matlab-shell-tab-hide-completions))
+            ;; else handle multiple completions
+            (let ((try nil))
+              (setq try (try-completion common-substr completions))
+              ;; Insert in a good completion.
+              (cond ((or (eq try nil) (eq try t)
+                         (and (stringp try)
+                              (string= try common-substr)))
+                     (insert common-substr)
+                     ;; Before displaying the completions buffer, check to see if
+                     ;; the completions window is already displayed, or if there is
+                     ;; a next window to display.  This determines how to remove the
+                     ;; completions later.
+                     (if (get-buffer-window "*Completions*")
+                         nil ;; Recycle old value of the display flag.
+                       ;; Else, reset this variable.
+                       (setq matlab-shell-window-exists-for-display-completion-flag
+                             ;; Else, it isn't displayed, save an action.
+                             (if (eq (next-window) (selected-window))
+                                 ;; If there is no other window, the post action is
+                                 ;; to delete.
+                                 'delete
+                               ;; If there is a window to display, the post
+                               ;; action is to bury.
+                               'bury)))
+                     (with-output-to-temp-buffer "*Completions*"
+                       (matlab-display-completion-list (mapcar 'car completions)
+                                                       common-substr)))
+                    ((stringp try)
+                     (insert try)
+                     (matlab-shell-tab-hide-completions))
+                    (t
+                     (insert common-substr))))
+            ))))))
 
 (defun matlab-shell-tab-hide-completions ()
   "Hide any completion windows for `matlab-shell-tab'."
@@ -5389,7 +5440,7 @@ Similar to  `comint-send-input'."
 If NOSHOW is non-nil, replace newlines with commas to suppress output.
 This command requires an active MATLAB shell."
   (interactive "r")
-  (if (> beg end) (let (mid) (setq mid beg beg end end mid)))
+  (if (> beg end) (let (mid) (setq mid beg  beg end  end mid)))
 
   (let ((command
 	 (let ((str (concat (buffer-substring beg end) "\n")))
@@ -5616,7 +5667,7 @@ indication that it ran."
     ;; grab the result. After this we erase the output from command and then
     ;; restore the current text at the MATLAB prompt and move to start-point.
     ;; Note, save-excursion works by tracking `point-marker' and when you manipulate
-    ;; the text at point, `point-marker' moves causing save-exursion to move
+    ;; the text at point, `point-marker' moves causing save-excursion to move
     ;; the point in to a location we don't want. See:
     ;; http://emacs.stackexchange.com/questions/7574/why-save-excursion-doesnt-save-point-position
     ;; Ideally there would be some way to prevent the *MATLAB* buffer from refreshing
@@ -5763,7 +5814,7 @@ To reference old errors, put the cursor just after the error text."
       (if url
           (progn (matlab-find-other-window-via-url url) (throw 'done nil))
         (save-excursion
-          (end-of-line) ;; In case we are before the linenumber 1998/06/05 16:54sk
+          (end-of-line) ;; In case we are before the line number 1998/06/05 16:54sk
           (if (not (re-search-backward gud-matlab-error-regexp nil t))
               (error "No errors found!"))
           (let ((ef (buffer-substring-no-properties
@@ -5849,7 +5900,7 @@ Maintain state in our topic browser buffer."
     ("^[ \t]+\\(\\w+\\)[ \t]+-" 1 font-lock-function-name-face)
     ;; Here is a See Also line...
     ("[ \t]+See also "
-     ("\\(\\w+\\)\\([,.]\\| and\\|$\\) *" nil nil (1 font-lock-reference-face))))
+     ("\\(\\w+\\)\\([,.]\\| and\\|$\\) *" nil  nil (1 font-lock-reference-face))))
   "These are keywords we also want to put mouse-faces on.")
 
 (defvar matlab-shell-topic-font-lock-keywords
@@ -5870,7 +5921,7 @@ Maintain state in our topic browser buffer."
 	     (1 font-lock-function-name-face))
 	    ;; Parameters: Not very accurate, unfortunately.
 	    ("[ \t]\\([A-Z]+[0-9]*\\)("
-	     ("'?\\(\\w+\\)'?\\([,)]\\) *" nil nil
+	     ("'?\\(\\w+\\)'?\\([,)]\\) *" nil  nil
 	      (1 font-lock-variable-name-face))
 	     )
 	    ;; Reference uppercase words
@@ -6161,3 +6212,56 @@ Check `matlab-mode-install-path'" filename))))
 (provide 'matlab)
 
 ;;; matlab.el ends here
+
+;; LocalWords:  el Wette mwette caltech edu Ludlam eludlam defconst online el
+;; LocalWords:  easymenu Ee progn defalias fboundp itimer defun boundp Wette el
+;; LocalWords:  defvaralias bol eol defmacro defcustom CASEINDENT COMMANDINDENT
+;; LocalWords:  sexp mmode xemacs fontified setq regex sg Fns Alist elipsis vf
+;; LocalWords:  functionname vers minibuffer eei featurep facep zmacs defface
+;; LocalWords:  cellbreak cellbreaks overline keymap stringify ispell torkel el
+;; LocalWords:  prog bolp if'd cdr uicontext setcolor pragmas tch lse mwette
+;; LocalWords:  ndfunction MUs caltech edu Ludlam eludlam defconst online Wette
+;; LocalWords:  easymenu Ee progn defalias fboundp itimer defun boundp mwette
+;; LocalWords:  defvaralias bol eol defmacro defcustom CASEINDENT COMMANDINDENT
+;; LocalWords:  sexp mmode xemacs fontified setq regex sg Fns Alist elipsis vf
+;; LocalWords:  functionname vers minibuffer eei featurep facep zmacs defface
+;; LocalWords:  cellbreak cellbreaks overline keymap stringify ispell torkel
+;; LocalWords:  prog bolp if'd cdr uicontext setcolor pragmas tch lse caltech
+;; LocalWords:  ndfunction MUs ght urface rol sw edu Ludlam eludlam defconst
+;; LocalWords:  online easymenu Ee progn defalias fboundp itimer defun boundp
+;; LocalWords:  defvaralias bol eol defmacro defcustom CASEINDENT COMMANDINDENT
+;; LocalWords:  sexp mmode xemacs fontified setq regex sg Fns Alist elipsis vf
+;; LocalWords:  functionname vers minibuffer eei featurep facep zmacs defface
+;; LocalWords:  cellbreak cellbreaks overline keymap stringify ispell torkel
+;; LocalWords:  prog bolp if'd cdr uicontext setcolor pragmas tch lse Wette
+;; LocalWords:  ndfunction MUs ght urface rol sw mwette caltech edu Ludlam lear
+;; LocalWords:  eludlam defconst online easymenu Ee progn defalias fboundp ont
+;; LocalWords:  itimer defun boundp defvaralias bol eol defmacro defcustom tus
+;; LocalWords:  CASEINDENT COMMANDINDENT sexp mmode xemacs fontified setq regex
+;; LocalWords:  sg Fns Alist elipsis vf functionname vers minibuffer eei ep mld
+;; LocalWords:  featurep facep zmacs defface cellbreak cellbreaks overline
+;; LocalWords:  keymap stringify ispell torkel prog bolp if'd cdr uicontext
+;; LocalWords:  setcolor pragmas tch lse ndfunction MUs ght urface rol sw dem
+;; LocalWords:  Imenu imenu alist reindent unindent fn prev ltype uniquafy lst
+;; LocalWords:  nlst nreverse Aki Vehtari backquote oldsyntax edebug parens
+;; LocalWords:  cline CLim XColor XDir XLabel XAxis XScale YColor YDir YAxis
+;; LocalWords:  YScale YTick ZColor ZDir ZGrid ZLabel ZScale ZTick Dithermap tl
+;; LocalWords:  autoend noerror returnme Unstarted includeelse lattr bobp zerop
+;; LocalWords:  cellstart blockcomm eobp commtype startmove nomove sregex Ooops
+;; LocalWords:  instring calc ci sem DEPTHNUMBER blockstart blockmid
+;; LocalWords:  blockendless blockend tmp unstarted listp fc boc parendepth
+;; LocalWords:  DONT cci startpnt bc ec hc rc funcall nosemi emacsen uncomments
+;; LocalWords:  afterd befored okpos startlst endlst ellipsify foundlst
+;; LocalWords:  expandto stringp donext allsyms mapcar fname nondirectory
+;; LocalWords:  upcase Uwe Brauer oub eucmos ucm documentclass usepackage
+;; LocalWords:  lstloadlanguages lstset keywordstyle bfseries labelstep
+;; LocalWords:  escapechar lstlisting hideshow func PUSHNEW pushnew hs bn un
+;; LocalWords:  msgpos aref nodesktop mlfile emacsinit emacsclient comint gud
+;; LocalWords:  msbn subprocess pc nconc kbd Thx Chappaz windowid dirtrackp xpm
+;; LocalWords:  commint postoutput ndbhotlink formatter overlaystack dolist ef
+;; LocalWords:  mello realfname aset buf noselect pmark memq promptend numchars
+;; LocalWords:  integerp emacsdocomplete mycmd ba FCN's BUILTINFLAG substr
+;; LocalWords:  emacsdocompletion subfield usr fil byteswap bw ignoredups mapc
+;; LocalWords:  noshow lastcmd dired numberp princ matlabregex stackexchange
+;; LocalWords:  doesnt stacktop basec sk downcase mfile dirs Stelios Kyriacou
+;; LocalWords:  kyriacou cbmv jhu nexti
