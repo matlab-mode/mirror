@@ -37,6 +37,7 @@ autoloads:
 	$(EMACS) $(EMACSFLAGS) $(AUTOGENFLAGS) $(addprefix -L ,$(LOADPATH)) --eval '(progn $(call require, $(PRELOADS)) (setq generated-autoload-file "$(abspath $(LOADDEFS))"))' -f batch-update-autoloads $(abspath $(LOADDIRS))
 
 
+.PHONY: misc
 misc: 
 	@
 
@@ -57,16 +58,16 @@ toolbox:
 Templates:
 	$(MAKE) -C templates
 
+.PHONY: tags
 tags: 
 	$(MAKE) -C toolbox/ $(MFLAGS) $@
 	$(MAKE) -C templates/ $(MFLAGS) $@
 
-
+.PHONY: clean
 clean:
-	rm -f *.elc
+	$(RM) *.elc matlab-load.el
 
 .PHONY: dist
-
 dist: autoloads
 	rm -rf $(DISTDIR)
 	mkdir $(DISTDIR)

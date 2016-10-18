@@ -1,0 +1,16 @@
+# -*-conf-*-
+
+*-compile-script
+bugs
+*.patch
+*.diff
+semantic.cache
+MISC
+
+# Backup files and unsaved files
+*~
+\#*\#
+
+# Generated files
+*.elc
+matlab-load.el

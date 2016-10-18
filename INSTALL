@@ -2,16 +2,10 @@ Installation:
 
 ** DEPENDANCIES
 
-This matlab-emacs build system now requires the CEDET suite.
-If you are using Emacs version 23.2 or later, you should have
-everything you need.
-
-For older versions of Emacs, visit:
-
-   http://cedet.sf.net
-
-The build system uses EDE for project management, Makefile creation,
-and autoload generation.
+This matlab-emacs build system now requires the CEDET suite.  If you are using
+Emacs version 23.2 or later, you should have everything you need. The build
+system uses EDE for project management, Makefile creation, and autoload
+generation.
 
 ** BUILD
 
@@ -21,7 +15,7 @@ To build:
 
 To build using an alternate version of CEDET:
 
-   make CEDET_PATH=~/my/cedet/lisp/
+  make CEDET_PATH=~/my/cedet/lisp/
 
 It is possible to use matlab.el, and associated programs without this
 extra package.  To do so, install and compile only those lisp files
