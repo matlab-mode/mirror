@@ -591,7 +591,7 @@ If font lock is not loaded, lay in wait."
     (define-key km [(meta e)] 'matlab-end-of-command)
     (define-key km [(meta j)] 'matlab-comment-line-break-function)
     (define-key km [(meta s)] 'matlab-show-matlab-shell-buffer)
-    (define-key km "\M-\t" 'matlab-complete-symbol)
+    ;;(define-key km "\M-\t" 'matlab-complete-symbol)
     (define-key km [(meta control f)] 'matlab-forward-sexp)
     (define-key km [(meta control b)] 'matlab-backward-sexp)
     (define-key km [(meta control q)] 'matlab-indent-sexp)
@@ -1387,8 +1387,6 @@ Convenient editing commands are:
  \\[matlab-comment-region]   - Comment/Uncomment out a region of code.
  \\[matlab-fill-comment-line] - Fill the current comment line.
  \\[matlab-fill-region] - Fill code and comments in region.
- \\[matlab-complete-symbol]   - Symbol completion of matlab symbols\
-based on the local syntax.
  \\[matlab-indent-sexp] - Indent syntactic block of code.
 
 Convenient navigation commands are:
@@ -1514,6 +1512,9 @@ All Key Bindings:
   ;; built-in sexp navigation
   (make-local-variable 'forward-sexp-function)
   (setq forward-sexp-function #'matlab-move-simple-sexp-internal)
+
+  ;; `completion-at-point' support
+  (add-hook 'completion-at-point-functions 'matlab-completion-at-point-function nil t)
 
   ;; If first function is terminated with an end statement, then functions have
   ;; ends.
