@@ -1520,6 +1520,9 @@ All Key Bindings:
   (add-hook 'completion-at-point-functions 'matlab-completion-at-point-function nil t)
 
   ;; `xref' support
+  ;; Add shell last - it will go to the front and run first, and if shell isn't
+  ;; active, will defer to local version.
+  (add-hook 'xref-backend-functions #'matlab-local-xref-activate nil t)
   (add-hook 'xref-backend-functions #'matlab-shell-xref-activate nil t)
 
   ;; If first function is terminated with an end statement, then functions have
