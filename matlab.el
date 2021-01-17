@@ -11,7 +11,7 @@
   "Current version of MATLAB(R) mode.")
 
 ;;
-;; Copyright (C) 1997-2020 Eric M. Ludlam
+;; Copyright (C) 1997-2021 Eric M. Ludlam
 ;; Copyright (C) 1991-1997 Matthew R. Wette
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -1374,6 +1374,9 @@ indicates as such."
 (declare-function mlint-clear-cross-function-variable-highlighting "mlint.el")
 (defvar show-paren-data-function)
 
+(declare-function matlab-shell-xref-activate "matlab-xref.el")
+
+
 (defun matlab-mode-leave ()
   "When leaving `matlab-mode', turn off `mlint-minor-mode'"
   (when (eq major-mode 'matlab-mode)
@@ -1515,6 +1518,9 @@ All Key Bindings:
 
   ;; `completion-at-point' support
   (add-hook 'completion-at-point-functions 'matlab-completion-at-point-function nil t)
+
+  ;; `xref' support
+  (add-hook 'xref-backend-functions #'matlab-shell-xref-activate nil t)
 
   ;; If first function is terminated with an end statement, then functions have
   ;; ends.
