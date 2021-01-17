@@ -1375,6 +1375,7 @@ indicates as such."
 (defvar show-paren-data-function)
 
 (declare-function matlab-shell-xref-activate "matlab-xref.el")
+(declare-function matlab-local-xref-activate "matlab-xref.el")
 
 
 (defun matlab-mode-leave ()
