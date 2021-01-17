@@ -16,7 +16,7 @@ LOADPATH= ./
 LOADDEFS=matlab-load.el
 LOADDIRS=.
 misc_MISC=ChangeLog ChangeLog.old1 ChangeLog.old2 INSTALL README dl_emacs_support.m
-lisp_LISP=matlab-compat.el matlab.el matlab-shell.el matlab-shell-gud.el matlab-netshell.el matlab-complete.el matlab-cgen.el matlab-publish.el matlab-topic.el mlint.el tlc.el linemark.el matlab-maint.el
+lisp_LISP=matlab-compat.el matlab.el matlab-shell.el matlab-shell-gud.el matlab-netshell.el matlab-complete.el matlab-cgen.el matlab-publish.el matlab-topic.el mlint.el tlc.el linemark.el matlab-maint.el matlab-xref.el
 cedet_LISP=semantic-matlab.el semanticdb-matlab.el srecode-matlab.el cedet-matlab.el company-matlab-shell.el
 VERSION=4.0
 DISTDIR=$(top)matlab-emacs-$(VERSION)
@@ -50,12 +50,17 @@ cedet: $(addsuffix c, $(cedet_LISP))
 toolbox:
 	$(MAKE) -C toolbox
 
+.PHONY:tests
+tests:
+	$(MAKE) -C tests
+
 .PHONY:Templates
 Templates:
 	$(MAKE) -C templates
 
 tags: 
 	$(MAKE) -C toolbox/ $(MFLAGS) $@
+	$(MAKE) -C tests/ $(MFLAGS) $@
 	$(MAKE) -C templates/ $(MFLAGS) $@
 
 
@@ -69,8 +74,8 @@ dist: autoloads
 	mkdir $(DISTDIR)
 	cp matlab-load.el $(misc_MISC) $(lisp_LISP) $(cedet_LISP) $(ede_FILES) $(DISTDIR)
 	$(MAKE) -C toolbox $(MFLAGS) DISTDIR=$(DISTDIR)/toolbox dist
-	$(MAKE) -C templates $(MFLAGS) DISTDIR=$(DISTDIR)/templates dist
 	$(MAKE) -C tests $(MFLAGS) DISTDIR=$(DISTDIR)/tests dist
+	$(MAKE) -C templates $(MFLAGS) DISTDIR=$(DISTDIR)/templates dist
 	tar -cvzf $(DISTDIR).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
 
