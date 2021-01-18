@@ -55,9 +55,7 @@
   "Function to activate xref backend that uses MATLAB Shell.
 Add this function to `xref-backend-functions' for matlab shell to
 use xref to find function and variable definitions."
-  (and (member major-mode '(matlab-mode matlab-shell-mode org-mode))
-       (matlab-shell-active-p)
-       'matlab-xref-shell))
+  (and (matlab-shell-active-p) 'matlab-xref-shell))
 
 ;;; MATLAB Local ---------------
 
@@ -83,8 +81,7 @@ use xref to find function and variable definitions."
   "Function to activate xref backend that uses local buffer scan.
 Add this function to `xref-backend-functions' to use xref to find
 function and variable definitions."
-  (and (member major-mode '(matlab-mode org-mode))
-       'matlab-xref-local))
+  'matlab-xref-local)
 
 
 ;;; Helper functions
