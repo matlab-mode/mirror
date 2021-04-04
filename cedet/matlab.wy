@@ -34,6 +34,7 @@
 %start parse_methods
 %start parse_events
 %start parse_enum
+%start parse_nested_function
 
 ;; -----------------------------
 ;; Block & Parenthesis terminals
@@ -47,6 +48,7 @@
 %token <block>       METHODS_BLOCK    "(METHODS END)"
 %token <block>       ENUM_BLOCK       "(ENUMERATION END)"
 %token <block>       EVENTS_BLOCK     "(EVENTS END)"
+%token <block>       FUNCTION_BLOCK   "(FUNCTION END)"
 
 %token <open-paren>  LPAREN      "("
 %token <close-paren> RPAREN      ")"
@@ -218,11 +220,14 @@ parse_methods : METHODS end_of_cmd
 	      ;
 
 ;; FUNCTION DECLS
-;; 
-function : FUNCTION IDENTIFIER opt_arg_list end_of_cmd END
-	   (FUNCTION-TAG $2 nil nil)
-	 | FUNCTION return_arg IDENTIFIER opt_arg_list end_of_cmd END
-	   (FUNCTION-TAG $3 nil nil)
+;;
+parse_nested_function : function
+		      ;
+
+function : FUNCTION IDENTIFIER opt_arg_list end_of_cmd opt_nested_functions END
+	   (FUNCTION-TAG $2 nil nil :nested $5)
+	 | FUNCTION return_arg IDENTIFIER opt_arg_list end_of_cmd opt_nested_functions END
+	   (FUNCTION-TAG $3 nil nil :nested $6)
 	 ;
 
 return_arg : IDENTIFIER EQUAL
@@ -234,6 +239,16 @@ return_arg : IDENTIFIER EQUAL
 opt_arg_list : ;; EMPTY
 	     | PAREN_BLOCK
 	     ;
+
+opt_nested_functions : ;; EMPTY
+		     | nested_functions
+		     ;
+
+nested_functions : nested_functions FUNCTION_BLOCK
+		   (append $1 (EXPANDFULL $2 parse_nested_function))
+		 | FUNCTION_BLOCK
+		   (EXPANDFULL $1 parse_nested_function)
+		 ;
 
 ;; Util
 end_of_cmd : SEMICOLON
