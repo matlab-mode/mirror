@@ -1,0 +1,324 @@
+;; matlab.wy --- Language parser for MATLAB
+;;
+;; Copyright (C) 2021 Eric Ludlam
+;;
+;; Author:  <eludlam@mathworks.com>
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see https://www.gnu.org/licenses/.
+
+;;; Commentary:
+;;
+;; Parser for `matlab-mode' to aid in indentation
+
+%languagemode  matlab-mode
+%parsetable    wisent-matlab-parser-tables
+%keywordtable  wisent-matlab-keywords
+%tokentable    wisent-matlab-tokens
+%languagemode  matlab-mode
+%setupfunction wisent-matlab-default-setup
+%provide       cedet/matlab-wy
+
+%start file
+%start parse_properties
+%start parse_methods
+%start parse_events
+%start parse_enum
+
+;; -----------------------------
+;; Block & Parenthesis terminals
+;; -----------------------------
+%type  <block>       ;;syntax "\\s(\\|\\s)" matchdatatype block
+
+%token <block>       PAREN_BLOCK      "(LPAREN RPAREN)"
+%token <block>       BRACE_BLOCK      "(LBRACE RBRACE)"
+%token <block>       BRACK_BLOCK      "(LBRACK RBRACK)"
+%token <block>       PROPERTIES_BLOCK "(PROPERTIES END)"
+%token <block>       METHODS_BLOCK    "(METHODS END)"
+%token <block>       ENUM_BLOCK       "(ENUMERATION END)"
+%token <block>       EVENTS_BLOCK     "(EVENTS END)"
+
+%token <open-paren>  LPAREN      "("
+%token <close-paren> RPAREN      ")"
+%token <open-paren>  LBRACE      "{"
+%token <close-paren> RBRACE      "}"
+%token <open-paren>  LBRACK      "["
+%token <close-paren> RBRACK      "]"
+
+;; ------------------
+;; Operator terminals
+;; ------------------
+%type  <punctuation> ;;syntax "\\(\\s.\\|\\s$\\|\\s'\\)+" matchdatatype string
+
+%token <punctuation> COMMA       ","
+%token <punctuation> SEMICOLON   ";"
+%token <punctuation> EQUAL       "="
+%token <punctuation> LT          "<"
+%token <punctuation> GT          ">"
+%token <punctuation> AMP         "&"
+%token <punctuation> PLUS        "+"
+%token <punctuation> MINUS       "-"
+%token <punctuation> punctuation  ;; The other random bits we don't care about.
+
+%type  <newline>     ;;
+%token <newline> newline
+
+;; -----------------
+;; Literal terminals
+;; -----------------
+%type  <symbol>      ;;syntax "\\(\\sw\\|\\s_\\)+"
+%token <symbol>      NULL_LITERAL    "\\`null\\'"
+%token <symbol>      BOOLEAN_LITERAL "\\`false\\'"
+%token <symbol>      BOOLEAN_LITERAL "\\`true\\'"
+%token <symbol>      IDENTIFIER
+
+%type  <string>      ;;syntax "\\s\"" matchdatatype sexp
+%token <string>      STRING_LITERAL
+
+%type  <number>      ;;syntax semantic-lex-number-expression
+%token <number>      NUMBER_LITERAL
+
+;;; KEYWORDS
+;; -----------------
+;; Keyword terminals
+;; -----------------
+;; Generate a keyword analyzer
+%type  <keyword> ;;syntax "\\(\\sw\\|\\s_\\)+" matchdatatype keyword
+
+%keyword FUNCTION "function"
+%put FUNCTION summary
+"Function declaration: function lhs=fname(arg1, arg2) ... end"
+
+%keyword CLASSDEF "classdef"
+%put CLASSDEF summary
+"Class declaration: classdef cname < baseclass & otherbaseclass ... end"
+
+%keyword PROPERTIES "properties"
+%put PROPERTIES summary
+"Property block: properties \\n propname \\n ... end"
+
+%keyword EVENTS "events"
+%put EVENTS summary
+"Events block: events \\n eventname \\n ... end"
+
+%keyword ENUMERATION "enumeration"
+%put ENUMERATION summary
+"Enumeration block: enumeration \\n enumName(#) \\n ... end"
+
+%keyword METHODS "methods"
+%put METHODS summary
+"METHODS block: methods \\n function name ... end \\n ... end"
+
+%keyword END "end"
+%put END summary "End of block: ... end"
+
+%keyword IF "if"
+%put IF summary "if <condition> ... else ... end"
+
+%keyword ELSE "else"
+%put ELSE summary "if <condition> ... else ... end"
+
+%keyword WHILE "while"
+%put WHILE summary "while <condition> ... end"
+
+%keyword SWITCH "switch"
+%put SWITCH summary "switch var \\n case 'opt' \\n ... end"
+
+%keyword CASE "case"
+%put CASE summary "switch var \\n case 'opt' \\n ... end"
+%keyword OTHERWISE "othewise"
+%put OTHERWISE summary "switch var \\n otherwise \\n ... end"
+
+%keyword FOR "for"
+%put FOR summary "for <range> ... end"
+
+
+%%
+
+file : function
+     | class
+     ;
+
+;; CLASS DECL
+;;
+class : CLASSDEF opt_attrs IDENTIFIER opt_baseclasses end_of_cmd class_blocks END
+	(TYPE-TAG $3 'class $6 (nreverse $4) :attributes $2)
+      ;
+
+opt_attrs : ;; EMPTY
+	  | PAREN_BLOCK
+	  ;
+
+opt_baseclasses : ;; EMPTY
+		| LT baseclasses
+		  (identity $2)
+		;
+
+baseclasses : baseclasses AMP IDENTIFIER
+	      (cons $3 $1)
+	    | IDENTIFIER ;; END
+	      (list $1)
+	    ;
+
+class_blocks : class_blocks class_block
+	       (append $1 $2)
+	     | class_block
+	       (identity $1)
+	     ;
+
+class_block : PROPERTIES_BLOCK
+	      (list) ;;(EXPANDFULL $1 parse_properties)
+	    | METHODS_BLOCK
+	      (EXPANDFULL $1 parse_methods)
+	    | EVENTS_BLOCK
+	      (list) ;;(EXPANDFULL $1 parse_events)
+	    | ENUM_BLOCK
+	      (list) ;;(EXPANDFULL $1 parse_enum)
+	    ;
+
+;; MCOS BLOCKS
+;;
+parse_properties : PROPERTIES end_of_cmd property_list END
+		   (list)
+		 ;
+
+property_list : ;; EMPTY
+	      ;
+
+
+parse_events : EVENTS end_of_cmd event_list END
+	       (list)
+	     ;
+
+event_list : ;; EMPTY
+	   ;
+
+parse_enum : ENUMERATION end_of_cmd enum_list END
+	     (list)
+	   ;
+
+enum_list : ;; EMPTY
+	  ;
+
+parse_methods : METHODS end_of_cmd
+		nil
+	      | END
+		nil
+	      | function
+	      ;
+
+;; FUNCTION DECLS
+;; 
+function : FUNCTION IDENTIFIER opt_arg_list end_of_cmd END
+	   (FUNCTION-TAG $2 nil nil)
+	 | FUNCTION return_arg IDENTIFIER opt_arg_list end_of_cmd END
+	   (FUNCTION-TAG $3 nil nil)
+	 ;
+
+return_arg : IDENTIFIER EQUAL
+	     (list $1)
+	   | BRACK_BLOCK EQUAL
+	     (list $1)
+	   ;
+
+opt_arg_list : ;; EMPTY
+	     | PAREN_BLOCK
+	     ;
+
+;; Util
+end_of_cmd : SEMICOLON
+	   | COMMA
+	   | newline
+	   ;
+
+
+;; Code Blocks
+;;code_block : ;; empty
+;;	   | code_block code end_of_cmd
+;;	   | code end_of_cmd
+;;	   ;
+;;
+;;code : if_block
+;;     | assignment
+;;     | expression
+;;     ;
+;;
+;;if_block : IF expression end_of_cmd code_block opt_else END
+;;	 ;
+;;
+;;opt_else : ;; EMPTY
+;;	 | ELSE code_block
+;;	 ;
+;;
+;;assignment : IDENTIFIER EQUAL expression end_of_cmd
+;;	   ;
+;;
+;;;; Expressions and other bits
+;;
+;;
+;;expression : value
+;;	   | value PLUS value
+;;	   | value MINUS value
+;;	   ;
+;;
+;;function_call : IDENTIFIER PAREN_BLOCK
+;;	      ;
+;;
+;;value : function_call
+;;      | IDENTIFIER
+;;      | NUMBER_LITERAL
+;;      | BRACK_BLOCK
+;;      | BRACE_BLOCK
+;;      ;
+
+%%
+(define-lex-regex-analyzer matlab-lex-ignore-ellipsis
+  "Match ellipsis."
+  "\\.\\.\\."
+  (goto-char (point-at-eol))
+  (forward-char 1) ;; skip over it
+  (setq semantic-lex-end-point (point))
+  )
+
+(define-lex-regex-analyzer matlab-lex-newline-exit
+  "Find a newline, and terminate the analysis.
+Termination is done by moving the end point."
+  "\\s-*\\(\n\\|\\s>\\)"
+  (semantic-lex-push-token
+   (semantic-lex-token
+    'newline (match-beginning 0) (match-end 0)))
+  ;; Move lexical pt to end of the lex'd region to force
+  ;; exit.  This will enable the wrapper to skip body of
+  ;; functions, etc.
+  (setq semantic-lex-end-point (cdr semantic-lex-analysis-bounds)))
+  
+
+(define-lex matlab-lexer
+  "A simple lexical analyzer for MATLAB mode buffers.
+This lexer is for scanning buffers for indentation, not a grammar."
+  ;; Simple syntax
+  semantic-lex-ignore-whitespace
+  matlab-lex-ignore-ellipsis
+  semantic-lex-ignore-comments
+  matlab-lex-newline-exit
+  ;; Special language stuff
+  matlab-wy--<string>-sexp-analyzer
+  matlab-wy--<block>-block-analyzer
+  matlab-wy--<number>-regexp-analyzer
+  matlab-wy--<keyword>-keyword-analyzer
+  matlab-wy--<symbol>-regexp-analyzer
+  matlab-wy--<punctuation>-string-analyzer
+  ;; semantic-lex-punctuation
+  semantic-lex-default-action)
+
+;; matlab.wy ends here

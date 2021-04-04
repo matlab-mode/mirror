@@ -1039,7 +1039,7 @@ If nothing is found before LIMIT, then stop and return nil."
 
 ;;; Block Scanning
 ;;
-(defun matlab--scan-block-forward (&optional bounds state)
+(defun matlab--scan-block-forward (&optional bounds state hook)
   "Scan forward over 1 MATLAB block construct.
 Return current state on exit.
   nil     - success
@@ -1050,7 +1050,10 @@ If cursor is on a middle-block construct like else, case, ERROR.
 
 Optional BOUNDS is a point in the buffer past which we won't scan. 
 Optional STATE is the current parsing state to start from.
-Use STATE to stop/start block scanning partway through."
+Use STATE to stop/start block scanning partway through.
+
+Optional HOOK is a function run whenever a new keyword is either
+pushed or popped onto the stack."
   (let ((blockstate (matlab--scan-derive-block-state state '(decl args mcos ctrl)))
 	(thiskeyword nil)
 	(stop nil)
@@ -1071,16 +1074,18 @@ Use STATE to stop/start block scanning partway through."
 	      (pop blockstate)))
 	(cond ((eq (car thiskeyword) 'end)
 	       ;; On end, pop last start we pushed
-	       (pop blockstate))
+	       (pop blockstate)
+	       (when hook (funcall hook 'pop thiskeyword))
+	       )
 	      ((eq (car thiskeyword) 'mcos)
-	       (if (matlab--valid-mcos-keyword-point (car blockstate))
-		   (push thiskeyword blockstate)
-		 ;; else, just skip it
+	       (when (matlab--valid-mcos-keyword-point (car blockstate))
+		 (push thiskeyword blockstate)
+		 (when hook (funcall hook 'push thiskeyword))
 		 ))
 	      ((eq (car thiskeyword) 'args)
-	       (if (matlab--valid-arguments-keyword-point (car blockstate))
-		   (push thiskeyword blockstate)
-		 ;; else, just skip it, not a keyword
+	       (when (matlab--valid-arguments-keyword-point (car blockstate))
+		 (push thiskeyword blockstate)
+		 (when hook (funcall hook 'push thiskeyword))
 		 ))
 	      ((and (not matlab-functions-have-end)
 		    (eq (car thiskeyword) 'decl)
@@ -1091,9 +1096,12 @@ Use STATE to stop/start block scanning partway through."
 	       ;; it to is another fcn.
 	       ;; This POP should result in empty state.
 	       (pop blockstate)
+	       (when hook (funcall hook 'pop thiskeyword))
 	       (goto-char (match-beginning 1)))
 	      (t
-	       (push thiskeyword blockstate)))
+	       (push thiskeyword blockstate)
+	       (when hook (funcall hook 'push thiskeyword))
+	       ))
 	))
     blockstate))
 

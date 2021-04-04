@@ -7,7 +7,7 @@
 *.orig
 *.rej
 *.dat
+*-wy.el
 
 # matlab-load.el is generated
 matlab-load.el
-parse
