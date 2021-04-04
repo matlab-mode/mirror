@@ -48,6 +48,39 @@ We already developed a clean way to scan block keywords to handle indenting
 so use that to identify keywords, and then use wisent to parse the tokens
 related to useful identifiers."
   (unless depth (setq depth semantic-lex-depth))
+
+  ;; Which lexer we use depends on where we are in the parsing state.
+  ;; Grab the first token, and use it to help decide what to do.
+  ;; Passing in 0 for length gets you 1 token.
+  (let ((tok (car (matlab-lexer start end 0 0))))
+    
+    (cond
+     ;; When depth is 0, we're just scanning the buffer for content.
+     ;; Thus, use the block based lexer.
+     ((= depth 0)
+      (matlab-lexer-blocks start end depth length))
+
+     ;; If the next token is one of FUNCTION, METHODS, CLASSDEF, then
+     ;; we want to parse into some blocks, so use or block parser again.
+     ((memq (car tok) '(FUNCTION METHODS CLASSDEF))
+      (matlab-lexer-blocks start end depth length))
+
+     ;; If there is some depth to go into, but it is some other kind of
+     ;; block, use the regular lexer that doesn't shortcut newlines.
+     (t
+      (let ((sl (matlab-lexer-simple-newline start end depth length)))
+	(message ">> %S" sl)
+	sl))
+     )))
+
+
+(defun matlab-lexer-blocks (start end &optional depth length)
+  "Wrapper around `matlab-lexer'.
+Most of the MATLAB syntax we don't want to waste our time parsing.
+We already developed a clean way to scan block keywords to handle indenting
+so use that to identify keywords, and then use wisent to parse the tokens
+related to useful identifiers."
+  (unless depth (setq depth semantic-lex-depth))
   (setq matlab-lex-block-stack nil)
   (save-excursion
     (goto-char start)

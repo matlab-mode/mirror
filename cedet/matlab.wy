@@ -256,46 +256,6 @@ end_of_cmd : SEMICOLON
 	   | newline
 	   ;
 
-
-;; Code Blocks
-;;code_block : ;; empty
-;;	   | code_block code end_of_cmd
-;;	   | code end_of_cmd
-;;	   ;
-;;
-;;code : if_block
-;;     | assignment
-;;     | expression
-;;     ;
-;;
-;;if_block : IF expression end_of_cmd code_block opt_else END
-;;	 ;
-;;
-;;opt_else : ;; EMPTY
-;;	 | ELSE code_block
-;;	 ;
-;;
-;;assignment : IDENTIFIER EQUAL expression end_of_cmd
-;;	   ;
-;;
-;;;; Expressions and other bits
-;;
-;;
-;;expression : value
-;;	   | value PLUS value
-;;	   | value MINUS value
-;;	   ;
-;;
-;;function_call : IDENTIFIER PAREN_BLOCK
-;;	      ;
-;;
-;;value : function_call
-;;      | IDENTIFIER
-;;      | NUMBER_LITERAL
-;;      | BRACK_BLOCK
-;;      | BRACE_BLOCK
-;;      ;
-
 %%
 (define-lex-regex-analyzer matlab-lex-ignore-ellipsis
   "Match ellipsis."
@@ -317,7 +277,6 @@ Termination is done by moving the end point."
   ;; functions, etc.
   (setq semantic-lex-end-point (cdr semantic-lex-analysis-bounds)))
   
-
 (define-lex matlab-lexer
   "A simple lexical analyzer for MATLAB mode buffers.
 This lexer is for scanning buffers for indentation, not a grammar."
@@ -326,6 +285,24 @@ This lexer is for scanning buffers for indentation, not a grammar."
   matlab-lex-ignore-ellipsis
   semantic-lex-ignore-comments
   matlab-lex-newline-exit
+  ;; Special language stuff
+  matlab-wy--<string>-sexp-analyzer
+  matlab-wy--<block>-block-analyzer
+  matlab-wy--<number>-regexp-analyzer
+  matlab-wy--<keyword>-keyword-analyzer
+  matlab-wy--<symbol>-regexp-analyzer
+  matlab-wy--<punctuation>-string-analyzer
+  ;; semantic-lex-punctuation
+  semantic-lex-default-action)
+
+(define-lex matlab-lexer-simple-newline
+  "A simple lexical analyzer for MATLAB mode buffers.
+This lexer is for scanning buffers for indentation, not a grammar."
+  ;; Simple syntax
+  semantic-lex-ignore-whitespace
+  matlab-lex-ignore-ellipsis
+  semantic-lex-ignore-comments
+  semantic-lex-newline
   ;; Special language stuff
   matlab-wy--<string>-sexp-analyzer
   matlab-wy--<block>-block-analyzer
