@@ -69,7 +69,7 @@ related to useful identifiers."
      ;; block, use the regular lexer that doesn't shortcut newlines.
      (t
       (let ((sl (matlab-lexer-simple-newline start end depth length)))
-	(message ">> %S" sl)
+	;;(message ">> %S" sl)
 	sl))
      )))
 
@@ -223,7 +223,9 @@ related to useful identifiers."
   "Return the list of subfunctions, or class members in TAG."
   (or
    (semantic-tag-get-attribute tag :members)
-   (semantic-tag-get-attribute tag :nested)))
+   (semantic-tag-get-attribute tag :nested)
+   (semantic-tag-get-attribute tag :arguments)
+   ))
 
 ;;;###autoload
 (defun matlab-wisent-default-setup ()

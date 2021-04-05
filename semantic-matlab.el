@@ -706,6 +706,14 @@ where NAME is unique."
 	 tags))
       tags)))
 
+(defun matlab-stag-arg-name (tag parent color)
+  "Format 
+Could be a string, or could be a tag."
+  (cond ((stringp tag)
+	 tag)
+	((semantic-tag-p tag)
+	 (semantic-format-tag-name tag parent color)
+	 )))
 
 (define-mode-local-override semantic-format-tag-prototype matlab-mode
   (tag &optional parent color)
@@ -718,7 +726,7 @@ cannot derive an argument list for them."
     (if (eq class 'function)
 	(let* ((args  (semantic-tag-function-arguments tag))
 	       (argstr (semantic--format-tag-arguments args
-						       #'identity
+						       #'matlab-stag-arg-name
 						       color))
 	       (builtin (semantic-tag-get-attribute tag :builtin))
 	       (doc (semantic-tag-docstring tag)))

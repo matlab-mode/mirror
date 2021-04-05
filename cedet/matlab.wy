@@ -35,6 +35,7 @@
 %start parse_events
 %start parse_enum
 %start parse_nested_function
+%start parse_arg_list
 
 ;; -----------------------------
 ;; Block & Parenthesis terminals
@@ -225,19 +226,29 @@ parse_nested_function : function
 		      ;
 
 function : FUNCTION IDENTIFIER opt_arg_list end_of_cmd opt_nested_functions END
-	   (FUNCTION-TAG $2 nil nil :nested $5)
+	   (FUNCTION-TAG $2 nil $3 :nested $5)
 	 | FUNCTION return_arg IDENTIFIER opt_arg_list end_of_cmd opt_nested_functions END
-	   (FUNCTION-TAG $3 nil nil :nested $6)
+	   (FUNCTION-TAG $3 $2 $4 :nested $6)
 	 ;
 
 return_arg : IDENTIFIER EQUAL
-	     (list $1)
+	     (list (EXPANDTAG (VARIABLE-TAG $1 nil nil)))
 	   | BRACK_BLOCK EQUAL
-	     (list $1)
+	     (list (EXPANDFULL $1 parse_arg_list))
 	   ;
+
+parse_arg_list : LBRACK
+	       | RBRACK
+	       | LPAREN
+	       | RPAREN
+	       | COMMA
+	       | IDENTIFIER
+		 (VARIABLE-TAG $1 nil nil)
+	       ;
 
 opt_arg_list : ;; EMPTY
 	     | PAREN_BLOCK
+	       (EXPANDFULL $1 parse_arg_list)
 	     ;
 
 opt_nested_functions : ;; EMPTY
