@@ -1,6 +1,6 @@
 ;;; matlab-shell.el --- Run MATLAB in an inferior process
 ;;
-;; Copyright (C) 2019 Eric Ludlam
+;; Copyright (C) 2019, 2021 Eric Ludlam
 ;;
 ;; Author: Eric Ludlam <zappo@gnu.org>
 ;;
@@ -1686,7 +1686,8 @@ This uses the lookfor command to find viable commands."
 It's output is returned as a string with no face properties.  The text output
 of the command is removed from the MATLAB buffer so there will be no
 indication that it ran."
-  (let ((msbn (matlab-shell-buffer-barf-not-running))
+  (let ((inhibit-read-only t)
+	(msbn (matlab-shell-buffer-barf-not-running))
 	(matlab-shell-suppress-prompt-hooks t))
     ;; We are unable to use save-excursion to save point position because we are
     ;; manipulating the *MATLAB* buffer by erasing the current text typed at the
