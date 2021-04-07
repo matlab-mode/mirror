@@ -71,6 +71,7 @@
 %token <punctuation> AMP         "&"
 %token <punctuation> PLUS        "+"
 %token <punctuation> MINUS       "-"
+%token <punctuation> DOT         "."
 %token <punctuation> punctuation  ;; The other random bits we don't care about.
 
 %type  <newline>     ;;
@@ -167,11 +168,17 @@ opt_baseclasses : ;; EMPTY
 		  (identity $2)
 		;
 
-baseclasses : baseclasses AMP IDENTIFIER
+baseclasses : baseclasses AMP fully_qualified_name
 	      (cons $3 $1)
-	    | IDENTIFIER ;; END
+	    | fully_qualified_name
 	      (list $1)
 	    ;
+
+fully_qualified_name : fully_qualified_name DOT IDENTIFIER
+		       (concat $1 "." $3)
+		     | IDENTIFIER
+		       (identity $1)
+		     ;
 
 class_blocks : class_blocks class_block
 	       (append $1 $2)

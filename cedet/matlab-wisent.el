@@ -42,11 +42,9 @@
 (make-variable-buffer-local 'matlab-lex-block-stack)
 
 (defun matlab-lexer-wrapper (start end &optional depth length)
-  "Wrapper around `matlab-lexer'.
-Most of the MATLAB syntax we don't want to waste our time parsing.
-We already developed a clean way to scan block keywords to handle indenting
-so use that to identify keywords, and then use wisent to parse the tokens
-related to useful identifiers."
+  "Wrapper around `matlab-lexer-blocks', and `matlab-lexer-simple-newline'.
+Optimize what parts of the buffer we bother parsing based on the reqested
+inputs, and what we see in the buffer."
   (unless depth (setq depth semantic-lex-depth))
 
   ;; Which lexer we use depends on where we are in the parsing state.
@@ -67,6 +65,7 @@ related to useful identifiers."
 
      ;; If there is some depth to go into, but it is some other kind of
      ;; block, use the regular lexer that doesn't shortcut newlines.
+     ;; This will also be used for PROPERTIES, EVENTS, etc blocks
      (t
       (let ((sl (matlab-lexer-simple-newline start end depth length)))
 	;;(message ">> %S" sl)
@@ -257,8 +256,6 @@ related to useful identifiers."
   ;;(semantic-show-unmatched-syntax-mode 1)
   )
 
-(add-hook 'matlab-mode-hook #'matlab-wisent-default-setup)
-;;(remove-hook 'matlab-mode-hook #'matlab-wisent-default-setup)
 
 (provide 'cedet/matlab-wisent)
 
