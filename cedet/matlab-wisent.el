@@ -26,6 +26,8 @@
 (require 'matlab-syntax)
 (require 'matlab-scan)
 (require 'semantic/lex)
+(require 'semantic/util)
+(require 'semantic/ctxt)
 (require 'cedet/matlab-wy)
 
 ;;; Code:
@@ -83,124 +85,124 @@ related to useful identifiers."
   (setq matlab-lex-block-stack nil)
   (save-excursion
     (goto-char start)
-    (let ((tmp nil)
-	  ;; Store stream as a list of lists of tokens.  We'll
-	  ;; flatten the list at the end, but in the meantime it
-	  ;; makes access quick.
-	  (stream-chunks nil)
-	  (ignore-until nil)
-	  (ogdepth depth)
-	  (functiondepth 0)
-	  (action-hook
-	   (lambda (action &optional keyword)
-	     ;; This hook is called whenever a valid
-	     (cond
-	      ;; PUSH actions mean beginning of a block.
-	      ;; Look at the keyword type and decide if we should
-	      ;; lex up that line or not.
-	      ((eq action 'push)
-	       ;;(message "push %S" keyword)
-	       (cond
-		;; Declarations Open:
-		;;   Stream the entire line.
-		((and (eq (car keyword) 'decl) (= functiondepth 0) (not ignore-until))
-		 (save-excursion
-		   (forward-word -1)
-		   (push (matlab-lexer (point) end 0 length) stream-chunks))
-		 ;; Ignore nested functions and argument lists.
-		 (setq functiondepth (1+ functiondepth))
-		 )
+    (let* ((tmp nil)
+	   ;; Store stream as a list of lists of tokens.  We'll
+	   ;; flatten the list at the end, but in the meantime it
+	   ;; makes access quick.
+	   (stream-chunks nil)
+	   (ignore-until nil)
+	   (ogdepth depth)
+	   (functiondepth 0)
+	   (action-hook
+	    (lambda (action &optional keyword)
+	      ;; This hook is called whenever a valid
+	      (cond
+	       ;; PUSH actions mean beginning of a block.
+	       ;; Look at the keyword type and decide if we should
+	       ;; lex up that line or not.
+	       ((eq action 'push)
+		;;(message "push %S" keyword)
+		(cond
+		 ;; Declarations Open:
+		 ;;   Stream the entire line.
+		 ((and (eq (car keyword) 'decl) (= functiondepth 0) (not ignore-until))
+		  (save-excursion
+		    (forward-word -1)
+		    (push (matlab-lexer (point) end 0 length) stream-chunks))
+		  ;; Ignore nested functions and argument lists.
+		  (setq functiondepth (1+ functiondepth))
+		  )
 
-		;; Declarations as Block:
-		;;   Convert functions into a block to be ignored.
-		((and (eq (car keyword) 'decl) (> functiondepth 0) (not ignore-until))
-		 (push (list (cons 'FUNCTION_BLOCK (cons (nth 2 keyword) (nth 3 keyword))))
-		       stream-chunks)
-		 (setq ignore-until keyword))
+		 ;; Declarations as Block:
+		 ;;   Convert functions into a block to be ignored.
+		 ((and (eq (car keyword) 'decl) (> functiondepth 0) (not ignore-until))
+		  (push (list (cons 'FUNCTION_BLOCK (cons (nth 2 keyword) (nth 3 keyword))))
+			stream-chunks)
+		  (setq ignore-until keyword))
 		
-		;; MCOS blocks:
-		;;    Compress entire unit into a block
-		((and (eq (car keyword) 'mcos) (= depth 0))
-		 (let* ((kw (nth 1 keyword))
-			(sym (cond ((string= kw "properties")
-				    'PROPERTIES_BLOCK)
-				   ((string= kw "methods")
-				    'METHODS_BLOCK)
-				   ((string= kw "events")
-				    'EVENTS_BLOCK)
-				   ((string= kw "enumeration")
-				    'ENUM_BLOCK)
-				   (t nil))))
-		   (when sym
-		       (push (list (cons sym (cons (nth 2 keyword) (nth 3 keyword))))
-			     stream-chunks)
-		       (setq ignore-until keyword)))
+		 ;; MCOS blocks:
+		 ;;    Compress entire unit into a block
+		 ((and (eq (car keyword) 'mcos) (= depth 0))
+		  (let* ((kw (nth 1 keyword))
+			 (sym (cond ((string= kw "properties")
+				     'PROPERTIES_BLOCK)
+				    ((string= kw "methods")
+				     'METHODS_BLOCK)
+				    ((string= kw "events")
+				     'EVENTS_BLOCK)
+				    ((string= kw "enumeration")
+				     'ENUM_BLOCK)
+				    (t nil))))
+		    (when sym
+		      (push (list (cons sym (cons (nth 2 keyword) (nth 3 keyword))))
+			    stream-chunks)
+		      (setq ignore-until keyword)))
+		  )
+
+		 ;; MCOS Expanded
+		 ;;   Stream the line the keyword is on.
+		 ((and (eq (car keyword) 'mcos) (> depth 0))
+		  (save-excursion
+		    (forward-word -1)
+		    (setq depth (1- depth))
+		    (push (matlab-lexer (point) end depth length) stream-chunks)
+		    ))
 		 )
 
-		;; MCOS Expanded
-		;;   Stream the line the keyword is on.
-		((and (eq (car keyword) 'mcos) (> depth 0))
-		 (save-excursion
-		   (forward-word -1)
-		   (setq depth (1- depth))
-		   (push (matlab-lexer (point) end depth length) stream-chunks)
-		   ))
-		)
-
-	       ;; Push keyword last so we can look at hte previous keyword
-	       ;; in the logic above.
-	       (push keyword matlab-lex-block-stack))
+		;; Push keyword last so we can look at hte previous keyword
+		;; in the logic above.
+		(push keyword matlab-lex-block-stack))
 		    
 	       ;; POP actions mean an end.  Add an end token
-	      ;; if it matches something we originally pushed.
-	      ((eq action 'pop)
-	       ;;(message "pop %S because of %S" (car matlab-lex-block-stack) keyword)
-	       (cond
-		;; MCOS blocks: Open
-		((and (eq (car (car matlab-lex-block-stack)) 'mcos)
-		      (not ignore-until))
-		 ;; Only stream the END keyword if it is matching
-		 ;; one of the things we add start tokens for.
-		 (push (list (cons 'END (cons (nth 2 keyword) (nth 3 keyword))))
-		       stream-chunks))
+	       ;; if it matches something we originally pushed.
+	       ((eq action 'pop)
+		;;(message "pop %S because of %S" (car matlab-lex-block-stack) keyword)
+		(cond
+		 ;; MCOS blocks: Open
+		 ((and (eq (car (car matlab-lex-block-stack)) 'mcos)
+		       (not ignore-until))
+		  ;; Only stream the END keyword if it is matching
+		  ;; one of the things we add start tokens for.
+		  (push (list (cons 'END (cons (nth 2 keyword) (nth 3 keyword))))
+			stream-chunks))
 
-		;; MCOS and Function blocks: Closed
-		((eq (car (car matlab-lex-block-stack)) 'mcos)
-		 (cond
-		  ((and ignore-until
-			(eq ignore-until (car matlab-lex-block-stack)))
-		   ;; We are ending a closed block - so look back to the last stream
-		   ;; and update the end of the BLOCK section.
-		   (setcdr (nthcdr 1 (car (car stream-chunks))) (nth 3 keyword))
-		   (setq ignore-until nil)
-		   )
-		  (t
-		   (setq depth (1+ depth)))))
+		 ;; MCOS and Function blocks: Closed
+		 ((eq (car (car matlab-lex-block-stack)) 'mcos)
+		  (cond
+		   ((and ignore-until
+			 (eq ignore-until (car matlab-lex-block-stack)))
+		    ;; We are ending a closed block - so look back to the last stream
+		    ;; and update the end of the BLOCK section.
+		    (setcdr (nthcdr 1 (car (car stream-chunks))) (nth 3 keyword))
+		    (setq ignore-until nil)
+		    )
+		   (t
+		    (setq depth (1+ depth)))))
 
-		;; FUNCTION blocks: Open
-		((and (eq (car (car matlab-lex-block-stack)) 'decl)
-		      (not ignore-until))
-		 ;; Only stream the END keyword if it is matching
-		 ;; one of the things we add start tokens for.
-		 (push (list (cons 'END (cons (nth 2 keyword) (nth 3 keyword))))
-		       stream-chunks)
-		 ;; Remove depth in function parsing.
-		 (setq functiondepth (1- functiondepth)))
+		 ;; FUNCTION blocks: Open
+		 ((and (eq (car (car matlab-lex-block-stack)) 'decl)
+		       (not ignore-until))
+		  ;; Only stream the END keyword if it is matching
+		  ;; one of the things we add start tokens for.
+		  (push (list (cons 'END (cons (nth 2 keyword) (nth 3 keyword))))
+			stream-chunks)
+		  ;; Remove depth in function parsing.
+		  (setq functiondepth (1- functiondepth)))
 
-		;; FUNCTION blocks: Closed
-		((and (eq (car (car matlab-lex-block-stack)) 'decl)
-		      (eq ignore-until (car matlab-lex-block-stack)))
-		 ;; We are ending a closed block - so look back to the last stream
-		 ;; and update the end of the BLOCK section.
-		 (setcdr (nthcdr 1 (car (car stream-chunks))) (nth 3 keyword))
-		 (setq ignore-until nil)
-		 )
+		 ;; FUNCTION blocks: Closed
+		 ((and (eq (car (car matlab-lex-block-stack)) 'decl)
+		       (eq ignore-until (car matlab-lex-block-stack)))
+		  ;; We are ending a closed block - so look back to the last stream
+		  ;; and update the end of the BLOCK section.
+		  (setcdr (nthcdr 1 (car (car stream-chunks))) (nth 3 keyword))
+		  (setq ignore-until nil)
+		  )
 		
-		)
-	       (pop matlab-lex-block-stack)
-	       ))
-	     ) )
-	  )
+		 )
+		(pop matlab-lex-block-stack)
+		))
+	      ) )
+	   )
       
       (while (setq tmp (matlab--scan-next-keyword 'indent end))
 	;; Add this keyword

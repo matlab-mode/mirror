@@ -13,17 +13,18 @@ ede_FILES=Project.ede Makefile
 EMACS=emacs
 EMACSFLAGS=-batch --no-site-file --eval '(setq debug-on-error t)'
 LOADPATH= ./
+#require=$(foreach r,$(1),(require (quote $(r))))
 LOADDEFS=matlab-load.el
 LOADDIRS=.
 misc_MISC=ChangeLog ChangeLog.old1 ChangeLog.old2 INSTALL README dl_emacs_support.m
 lisp_LISP=matlab-compat.el matlab-syntax.el matlab-scan.el matlab.el matlab-shell.el matlab-shell-gud.el matlab-netshell.el matlab-complete.el matlab-cgen.el matlab-publish.el matlab-topic.el mlint.el tlc.el linemark.el matlab-maint.el
-cedet_LISP=semantic-matlab.el semanticdb-matlab.el srecode-matlab.el cedet-matlab.el company-matlab-shell.el
-VERSION=4.0
+cedet-old_LISP=semantic-matlab.el semanticdb-matlab.el srecode-matlab.el cedet-matlab.el company-matlab-shell.el
+VERSION=5.0
 DISTDIR=$(top)matlab-emacs-$(VERSION)
 
 
 
-all: autoloads misc lisp cedet toolbox Templates
+all: autoloads misc lisp cedet-old toolbox Templates cedet
 
 .PHONY: clean-autoloads
 clean-autoloads: 
@@ -43,8 +44,8 @@ misc:
 .PHONY: lisp
 lisp: $(addsuffix c, $(lisp_LISP))
 
-.PHONY: cedet
-cedet: $(addsuffix c, $(cedet_LISP))
+.PHONY: cedet-old
+cedet-old: $(addsuffix c, $(cedet-old_LISP))
 
 .PHONY:toolbox
 toolbox:
@@ -54,9 +55,14 @@ toolbox:
 Templates:
 	$(MAKE) -C templates
 
+.PHONY:cedet
+cedet:
+	$(MAKE) -C cedet
+
 tags: 
 	$(MAKE) -C toolbox/ $(MFLAGS) $@
 	$(MAKE) -C templates/ $(MFLAGS) $@
+	$(MAKE) -C cedet/ $(MFLAGS) $@
 
 
 clean:
@@ -67,11 +73,13 @@ clean:
 dist: autoloads
 	rm -rf $(DISTDIR)
 	mkdir $(DISTDIR)
-	cp matlab-load.el $(misc_MISC) $(lisp_LISP) $(cedet_LISP) $(ede_FILES) $(DISTDIR)
+	cp matlab-load.el $(misc_MISC) $(lisp_LISP) $(cedet-old_LISP) $(ede_FILES) $(DISTDIR)
 	$(MAKE) -C toolbox $(MFLAGS) DISTDIR=$(DISTDIR)/toolbox dist
-	$(MAKE) -C templates $(MFLAGS) DISTDIR=$(DISTDIR)/templates dist
 	$(MAKE) -C tests $(MFLAGS) DISTDIR=$(DISTDIR)/tests dist
+	$(MAKE) -C templates $(MFLAGS) DISTDIR=$(DISTDIR)/templates dist
+	$(MAKE) -C cedet $(MFLAGS) DISTDIR=$(DISTDIR)/cedet dist
 	tar -cvzf $(DISTDIR).tar.gz $(DISTDIR)
 	rm -rf $(DISTDIR)
+
 
 # End of Makefile

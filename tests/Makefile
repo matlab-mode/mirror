@@ -16,7 +16,7 @@ EMACSFLAGS=-batch --no-site-file --eval '(setq debug-on-error t)'
 require=$(foreach r,$(1),(require (quote $(r))))
 LOADPATH= ../
 matlab_MISC=buggy.m dbtester.m expressions.m indents.m mclass.m mpclass.m stringtest.m syntaxerr.m cellscript.m fontlock.m testeeval.m
-VERSION=4.0
+VERSION=5.0
 DISTDIR=$(top)matlab-emacs-$(VERSION)/tests
 
 

@@ -10,8 +10,8 @@
 top=../
 ede_FILES=Project.ede Makefile
 
-matlab_MISC=emacsinit.m opentoline.m emacsdocomplete.m dbhotlink.m emacsnetshell.m emacsrunregion.m +emacs/@EmacsServer/EmacsServer.m
-VERSION=4.0
+matlab_MISC=emacsinit.m opentoline.m emacsdocomplete.m dbhotlink.m emacsnetshell.m emacsrunregion.m +emacs/@EmacsServer/EmacsServer.m help.m emacscd.m dbstop.m emacss_dbstop.m ebstatus.m ebstack.m emacspathinit.m ebstop.m ebquit.m ebcont.m ebstep.m ebup.m
+VERSION=5.0
 DISTDIR=$(top)matlab-emacs-$(VERSION)/toolbox
 
 

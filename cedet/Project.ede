@@ -1,0 +1,22 @@
+;; Object matlab-cedet
+;; EDE Project Files are auto generated: Do Not Edit
+(ede-proj-project "cedet"
+  :file "Project.ede"
+  :name "cedet"
+  :targets
+  (list
+    (ede-proj-target-elisp "lisp"
+      :name "lisp"
+      :path ""
+      :source '("matlab-wisent.el" "matlab-cedet.el"))
+    (semantic-ede-proj-target-grammar "wisent"
+      :name "wisent"
+      :path ""
+      :source '("matlab.wy")
+      :aux-packages '("semantic")
+      :pre-load-packages '("semantic/grammar" "semantic/bovine/grammar" "semantic/wisent/grammar"))
+    (ede-proj-target-aux "misc"
+      :name "misc"
+      :path ""
+      :source '("sample.m")))
+  )

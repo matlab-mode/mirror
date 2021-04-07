@@ -11,7 +11,7 @@ top=../
 ede_FILES=Project.ede Makefile
 
 templates_MISC=srecode-matlab.srt
-VERSION=4.0
+VERSION=5.0
 DISTDIR=$(top)matlab-emacs-$(VERSION)/templates
 
 

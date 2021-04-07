@@ -45,11 +45,13 @@
 %token <block>       PAREN_BLOCK      "(LPAREN RPAREN)"
 %token <block>       BRACE_BLOCK      "(LBRACE RBRACE)"
 %token <block>       BRACK_BLOCK      "(LBRACK RBRACK)"
-%token <block>       PROPERTIES_BLOCK "(PROPERTIES END)"
-%token <block>       METHODS_BLOCK    "(METHODS END)"
-%token <block>       ENUM_BLOCK       "(ENUMERATION END)"
-%token <block>       EVENTS_BLOCK     "(EVENTS END)"
-%token <block>       FUNCTION_BLOCK   "(FUNCTION END)"
+
+%type  <metablock>   ;; syntax developed by lex wrapper
+%token <metablock>       PROPERTIES_BLOCK "(PROPERTIES END)"
+%token <metablock>       METHODS_BLOCK    "(METHODS END)"
+%token <metablock>       ENUM_BLOCK       "(ENUMERATION END)"
+%token <metablock>       EVENTS_BLOCK     "(EVENTS END)"
+%token <metablock>       FUNCTION_BLOCK   "(FUNCTION END)"
 
 %token <open-paren>  LPAREN      "("
 %token <close-paren> RPAREN      ")"
