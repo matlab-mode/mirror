@@ -972,7 +972,7 @@ This matcher will handle a range of variable features."
 	   ;; Save this match so we can do a 2nd anchored search for a data type.
 	   (md1 (list (match-beginning 1) (match-end 1)))
 	   (tm (looking-at
-		"\\(\\(?:\\s-*([^\n\)]+)\\s-*\\|\\s-+\\)?\\(?:\\w+\\|\\.\\)*\\)\\s-*\\($\\|[.%{=]\\)"))
+		"\\(\\(?:\\s-*([^\n\)]+)\\s-*\\|\\s-+\\)?\\(?:\\w+\\(?:\\.\\w+\\)*\\)?\\)\\s-*\\($\\|[;%{=]\\)"))
 	   (tm1 (if tm (list (match-beginning 1) (match-end 1))
 		  ;; The below is a cheat to not highlight anything but
 		  ;; still supply the match data for this optional piece.
