@@ -26,7 +26,9 @@ classdef (abstract) mclass < handle & matlab.mixin.SetGetExactNames % #7#
         AF (1,1) char {mustBeMember(AF, {'High','Medium','Low'})} = 'Low'; % #5#
 %^      ^vn   ^ty       ^df               ^st                   ^df  ^st     ^co
         AG (1,1) matlab.lang.OnOffSwitchState = 'on'; % #6#
-%^      ^vn   ^ty        ^ty                      ^st    ^co
+%^      ^vn   ^ty        ^ty    ^ty               ^st    ^co
+        AH matlab.very.long.package.name.with.lots.of.Dots; % #10#
+%^      ^vn   ^ty ^ty ^ty    ^ty     ^ty              ^ty ^df   ^co
     end % <<111
 
     % >> 112
